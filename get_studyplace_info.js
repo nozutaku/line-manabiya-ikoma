@@ -151,8 +151,8 @@ module.exports.get_studyroom_info = function(){
 
           //}
 
-        console.log("i=" +i+" title="+ title + " link="+link + " date="+year+"/"+month+"/"+day);
-        console.log("body="+description);
+        //console.log("i=" +i+" title="+ title + " link="+link + " date="+year+"/"+month+"/"+day);
+        //console.log("body="+description);
 
       }
     }
@@ -185,8 +185,8 @@ module.exports.get_studyroom_info = function(){
 
           //}
 
-        console.log("i=" +i+" title="+ title + " link="+link + " date="+year+"/"+month+"/"+day);
-        console.log("body="+description);
+        //console.log("i=" +i+" title="+ title + " link="+link + " date="+year+"/"+month+"/"+day);
+        //console.log("body="+description);
 
       }
       //全図書館自習室情報(ここまで)

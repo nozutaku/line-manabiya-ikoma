@@ -8,6 +8,7 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var request = require('request');
 var app = express();
+var $ = require('jquery-deferred');
 
 var StydyPlaceServerConnection = require('./get_studyplace_info.js');
 
@@ -32,6 +33,28 @@ global.PLACE_IKOMA_MIRAKU = 6;     //美楽来
 //global.selectplace = PLACE_IKOMA_TOSHOKAN; //現在の設定値
 global.selectplace = PLACE_IKOMA_TOSHOKAN; //現在の設定値
 
+var STRING_IKOMA_TOSHOKAN1 = "本館";
+var STRING_IKOMA_TOSHOKAN2 = "図書会館";
+var STRING_IKOMA_TOSHOKAN3 = "生駒市図書館";
+
+var STRING_IKOMA_HABATAKI1 = "はばたき";
+var STRING_IKOMA_HABATAKI2 = "北コミュニティセンター";
+
+var STRING_IKOMA_SESERAGI1 = "せせらぎ";
+var STRING_IKOMA_SESERAGI2 = "南コミュニティセンター";
+
+var STRING_IKOMA_SHIKANODAI = "鹿ノ台";
+
+var STRING_IKOMA_TAKEMARU = "たけまる";
+
+var STRING_IKOMA_MIRAKU1 = "美楽来";
+var STRING_IKOMA_MIRAKU2 = "みらく";
+
+var STRING_IKOMA_EKIMAE = "駅前";
+
+
+var input_message;
+var reply_message;
   
 // listen on port
 const port = process.env.PORT || 3000;
@@ -67,16 +90,25 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   
   ------------------ test end ------------------ */
   
+  //var tmp = make_reply_message("本館");
   
+  input_message = "本館";
   
+  make_reply_message()
+  .done(function(){
+    console.log("reply_message = " + reply_message);
+  });
+    
+
   
+  /* DEBUG
   StydyPlaceServerConnection.get_studyroom_info()
   .done(function(){
     for(var i=0; i<studyroominfomations.length; i++){
       console.log("studyroominfos["+i+"].title="+studyroominfomations[i].title);
     }
   });
-  
+  */
   
   console.log("send 200 OK");
   res.status(200).end();
@@ -97,6 +129,16 @@ app.post('/webhook', function(req, res, next){
 
 //        if (event.type == 'message' && event.message.text == 'ハロー'){
         if (event.type == 'message'){
+          
+          //★defferをしないとダメかも
+          //var reply_message = make_reply_message( event.message.text );
+          
+          input_message = event.message.text;
+  
+          make_reply_message()
+          .done(function(){
+            console.log("reply_message = " + reply_message);
+            
             var headers = {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + process.env.CHANNEL_ACCESS_TOKEN
@@ -105,8 +147,8 @@ app.post('/webhook', function(req, res, next){
                 replyToken: event.replyToken,
                 messages: [{
                     type: 'text',
-                    //text: 'henoheno'
-                    text: event.message.text    //おうむ返し
+                    text: reply_message
+                    //text: event.message.text    //おうむ返し
                 }]
             }
             var url = 'https://api.line.me/v2/bot/message/reply';
@@ -117,13 +159,183 @@ app.post('/webhook', function(req, res, next){
                 body: body,
                 json: true
             });
+            
+          });
+          
+          
+          
+
         }
       else{
-        console.log("NOT text");
+        console.log("NOT text");    //★★LINEスタンプを返そう。「ごめんわからないよー」とかの意味の
       }
 
     }
 });
+
+
+
+/* ユーザー入力文字から返答文面を作成 */
+function make_reply_message( ){
+  var input = input_message;
+  var output="";
+  console.log("input="+input);
+  
+  //図書館名が入ってたら本日の図書館状況を図書館ブログから返す
+  //output = make_lib_studyplace_status_message( input );
+
+  //////////////////////////
+  
+  var dfd = new $.Deferred;
+  
+  var lib_num = pickup_lib_name( input );
+  
+  if( lib_num > 0 ){
+    selectplace = lib_num;
+    
+    //図書館ブログ検索
+    StydyPlaceServerConnection.get_studyroom_info()
+      .done(function(){
+        for(var i=0; i<studyroominfomations.length; i++){
+          console.log("---------------------------");
+          console.log("studyroominfos["+i+"].title="+studyroominfomations[i].title);
+          
+          var display_date = make_display_data_format(studyroominfomations[i].date);
+          
+          output = studyroominfomations[i].title + " " 
+            + display_date + " " 
+            + studyroominfomations[i].content + " "
+            + studyroominfomations[i].link;
+                    
+        }
+      if( output == ""){
+        reply_message = "ごめんわからないよ～";   //スタンプに後ほど変更★★
+      }
+      reply_message = output;
+      console.log("reply_message = " + reply_message);
+      console.log("resolve");
+      return dfd.resolve();
+
+    });
+    console.log("promise");
+    return dfd.promise();
+  }
+  else{ //図書館名無
+    if( output == ""){
+      reply_message = "ごめんわからないよ～";   //スタンプに後ほど変更★★
+    }
+    console.log("reply_message = " + reply_message);
+    return dfd.resolve();
+  }
+  /////////////////////////
+  
+  
+
+  
+  return dfd.resolve();
+  
+}
+
+/* 図書館名から返答文字列作成 */
+function make_lib_studyplace_status_message( input ){
+  var output = "";
+  var lib_num = pickup_lib_name( input );
+  
+  if( lib_num > 0 ){
+    selectplace = lib_num;
+    
+    //図書館ブログ検索
+    StydyPlaceServerConnection.get_studyroom_info()
+      .done(function(){
+        for(var i=0; i<studyroominfomations.length; i++){
+          console.log("---------------------------");
+          console.log("studyroominfos["+i+"].title="+studyroominfomations[i].title);
+          
+          var display_date = make_display_data_format(studyroominfomations[i].date);
+          
+          output = studyroominfomations[i].title + " " 
+            + display_date + " " 
+            + studyroominfomations[i].content + " "
+            + studyroominfomations[i].link;
+                    
+        }
+    });
+    
+  }
+  else{ //図書館名無
+    //don't care
+  }
+  
+  return output;
+}
+
+function pickup_lib_name( str ){
+  var output_lib_num = -1;
+  
+  //本館
+  if ( str.indexOf(STRING_IKOMA_TOSHOKAN1) != -1) {
+    output_lib_num = PLACE_IKOMA_TOSHOKAN;
+  }
+  else if( str.indexOf(STRING_IKOMA_TOSHOKAN2) != -1 ){
+    output_lib_num = PLACE_IKOMA_TOSHOKAN;
+  }
+  else if( str.indexOf(STRING_IKOMA_TOSHOKAN3) != -1 ){
+    output_lib_num = PLACE_IKOMA_TOSHOKAN;
+  }
+  //北コミュニティセンター(はばたき)
+  else if( str.indexOf(STRING_IKOMA_HABATAKI1) != -1 ){
+    output_lib_num = PLACE_IKOMA_HABATAKI;
+  }
+  else if( str.indexOf(STRING_IKOMA_HABATAKI2) != -1 ){
+    output_lib_num = PLACE_IKOMA_HABATAKI;
+  }
+  //南コミュニティセンター(せせらぎ)
+  else if( str.indexOf(STRING_IKOMA_SESERAGI1) != -1 ){
+    output_lib_num = PLACE_IKOMA_SESERAGI;
+  }
+  else if( str.indexOf(STRING_IKOMA_SESERAGI2) != -1 ){
+    output_lib_num = PLACE_IKOMA_SESERAGI;
+  }
+  //鹿ノ台
+  else if( str.indexOf(STRING_IKOMA_SHIKANODAI) != -1 ){
+    output_lib_num = PLACE_IKOMA_SHIKANODAI;
+  }
+  //たけまる
+  else if( str.indexOf(STRING_IKOMA_TAKEMARU) != -1 ){
+    output_lib_num = PLACE_IKOMA_TAKEMARU;
+  }
+  //美楽来
+  else if( str.indexOf(STRING_IKOMA_MIRAKU1) != -1 ){
+    output_lib_num = PLACE_IKOMA_MIRAKU;
+  }
+  else if( str.indexOf(STRING_IKOMA_MIRAKU2) != -1 ){
+    output_lib_num = PLACE_IKOMA_MIRAKU;
+  }
+  //駅前図書館
+  else if( str.indexOf(STRING_IKOMA_EKIMAE) != -1 ){
+    //駅前図書館には自習室は無い
+  }
+  else{
+    //don't care
+  }
+      
+  return output_lib_num;
+}
+
+function make_display_data_format( date ){
+  var output;
+  
+  var dateString = new Date( date );
+  var year = dateString.getFullYear();
+  var month = dateString.getMonth() + 1;
+  var day = dateString.getDate();
+  
+  output = year+"/"+month+"/"+day;
+  
+  console.log("[make_display_data_format] date="+year+"/"+month+"/"+day);
+  
+  return output;                          
+}
 
 function handleEvent(event) {
 	console.log("type=" + event.type);
