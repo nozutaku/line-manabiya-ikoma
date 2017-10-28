@@ -16,9 +16,10 @@ $ npm install
 
 Configuration:
 
+```
 heroku 環境変数
 $ export CHANNEL_SECRET=YOUR_CHANNEL_SECRET
 $ export CHANNEL_ACCESS_TOKEN=YOUR_CHANNEL_ACCESS_TOKEN
 $ export PORT=1234
-
+```
 

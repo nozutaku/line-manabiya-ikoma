@@ -90,15 +90,16 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   
   ------------------ test end ------------------ */
   
-  //var tmp = make_reply_message("本館");
-  
+  //send_notification();
+
+  /* ========= DEBUG ここから ================
   input_message = "はばたき";
   
   make_reply_message()
   .done(function(){
     console.log("reply_message = " + reply_message);
   });
-    
+    ========================================= */
 
   
   /* DEBUG
@@ -114,6 +115,35 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   res.status(200).end();
   
 });
+
+
+app.get('/push1', function(req, res) {
+  
+  send_notification("test1");
+  
+  console.log("send 200 OK");
+  res.status(200).end();
+  
+});
+
+app.get('/push2', function(req, res) {
+  
+  send_notification("test2");
+  
+  console.log("send 200 OK");
+  res.status(200).end();
+  
+});
+
+app.get('/push3', function(req, res) {
+  
+  send_notification("test3");
+  
+  console.log("send 200 OK");
+  res.status(200).end();
+  
+});
+
 
 app.post('/webhook', function(req, res, next){
 	
@@ -173,7 +203,30 @@ app.post('/webhook', function(req, res, next){
     }
 });
 
-
+function send_notification(push_message){
+  
+    var headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + process.env.CHANNEL_ACCESS_TOKEN
+    }
+    var body = {
+//        replyToken: event.replyToken,
+        to: "★your_to★",
+        messages: [{
+          type: 'text',
+          text: push_message
+        //text: event.message.text    //おうむ返し
+        }]
+    }
+    var url = 'https://api.line.me/v2/bot/message/push';
+      request({
+        url: url,
+        method: 'POST',
+        headers: headers,
+        body: body,
+        json: true
+      });
+}
 
 /* ユーザー入力文字から返答文面を作成 */
 function make_reply_message( ){
