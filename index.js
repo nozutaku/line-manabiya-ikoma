@@ -92,7 +92,7 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   
   //var tmp = make_reply_message("本館");
   
-  input_message = "本館";
+  input_message = "はばたき";
   
   make_reply_message()
   .done(function(){
@@ -196,6 +196,8 @@ function make_reply_message( ){
     //図書館ブログ検索
     StydyPlaceServerConnection.get_studyroom_info()
       .done(function(){
+      
+      /* ----
         for(var i=0; i<studyroominfomations.length; i++){
           console.log("---------------------------");
           console.log("studyroominfos["+i+"].title="+studyroominfomations[i].title);
@@ -208,8 +210,22 @@ function make_reply_message( ){
             + studyroominfomations[i].link;
                     
         }
+        ---- */
+      console.log("studyroominfomations.length = "+studyroominfomations.length);
+      
+      if( studyroominfomations.length > 0 ){
+          console.log("studyroominfos[0].title="+studyroominfomations[0].title);
+          
+          var display_date = make_display_data_format(studyroominfomations[0].date);
+          
+          output = studyroominfomations[0].title + " " 
+            + display_date + " " 
+            + studyroominfomations[0].content + " "
+            + studyroominfomations[0].link;
+      }
+      
       if( output == ""){
-        reply_message = "ごめんわからないよ～";   //スタンプに後ほど変更★★
+        output = "今日は自習室やってないかも～";
       }
       reply_message = output;
       console.log("reply_message = " + reply_message);
@@ -253,9 +269,9 @@ function make_lib_studyplace_status_message( input ){
           
           var display_date = make_display_data_format(studyroominfomations[i].date);
           
-          output = studyroominfomations[i].title + " " 
+          output += studyroominfomations[i].title + " " 
             + display_date + " " 
-            + studyroominfomations[i].content + " "
+            //+ studyroominfomations[i].content + " "
             + studyroominfomations[i].link;
                     
         }
@@ -328,7 +344,7 @@ function make_display_data_format( date ){
   var dateString = new Date( date );
   var year = dateString.getFullYear();
   var month = dateString.getMonth() + 1;
-  var day = dateString.getDate();
+  var day = dateString.getDate() + 1;
   
   output = year+"/"+month+"/"+day;
   

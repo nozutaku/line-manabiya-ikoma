@@ -1,6 +1,6 @@
 /* 自習室情報取得 */
 
-var DEBUG_NOT_ONLYTODAY = 1;  //1=全て登録　0=当日のみ(正式版)
+var DEBUG_NOT_ONLYTODAY = 0;  //1=全て登録　0=当日のみ(正式版)
 
 var $ = require('jquery-deferred');
 //var $ = require('jquery');
@@ -16,12 +16,12 @@ var URL_IKOMA_ALL = 'select * from yql.query.multi where queries in ('
 		+ '\"select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_miraku/rss.xml\' and title matches \'.*自習室.*\' limit 1\"'
 		+ ')|sort(field=\'pubDate\',descending=\'true\');';
 
-var URL_IKOMA_TOSHOKAN = "select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_toshokan/rss.xml\' and title matches \'.*自習室.*\' limit 3";
-var URL_IKOMA_HABATAKI = "select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_habataki/rss.xml\' and title matches \'.*自習室.*\' limit 3";
-var URL_IKOMA_SESERAGI = "select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_seseragi/rss.xml\' and title matches \'.*自習室.*\' limit 3";
-var URL_IKOMA_SHIKANODAI = "select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_shikanodai/rss.xml\' and title matches \'.*自習室.*\' limit 3";
-var URL_IKOMA_TAKEMARU = "select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_takemaru/rss.xml\' and title matches \'.*自習室.*\' limit 3";
-var URL_IKOMA_MIRAKU = "select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_miraku/rss.xml\' and title matches \'.*自習室.*\' limit 3";
+var URL_IKOMA_TOSHOKAN = "select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_toshokan/rss.xml\' and title matches \'.*自習室.*\' limit 2";
+var URL_IKOMA_HABATAKI = "select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_habataki/rss.xml\' and title matches \'.*自習室.*\' limit 2";
+var URL_IKOMA_SESERAGI = "select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_seseragi/rss.xml\' and title matches \'.*自習室.*\' limit 2";
+var URL_IKOMA_SHIKANODAI = "select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_shikanodai/rss.xml\' and title matches \'.*自習室.*\' limit 2";
+var URL_IKOMA_TAKEMARU = "select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_takemaru/rss.xml\' and title matches \'.*自習室.*\' limit 2";
+var URL_IKOMA_MIRAKU = "select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_miraku/rss.xml\' and title matches \'.*自習室.*\' limit 2";
 
 
 
@@ -140,18 +140,22 @@ module.exports.get_studyroom_info = function(){
 
           if(DEBUG_NOT_ONLYTODAY){  //DEBUGとして全て登録する
             set_studyroominfomations( title, link, dateString, description, num );
+            num++;
           }
           else{
-            if( day == dateStringNow.getDate() ){   //当日のみセットする
+              console.log("day="+day);
+              console.log("date="+dateStringNow.getDate());
+            if( day+1 == dateStringNow.getDate() ){   //当日のみセットする
               set_studyroominfomations( title, link, dateString, description, num );
+              num++;
             }
           }
-          num++;
+          
 
 
           //}
 
-        //console.log("i=" +i+" title="+ title + " link="+link + " date="+year+"/"+month+"/"+day);
+        console.log("i=" +i+" title="+ title + " link="+link + " date="+year+"/"+month+"/"+day);
         //console.log("body="+description);
 
       }
@@ -174,19 +178,20 @@ module.exports.get_studyroom_info = function(){
 
           if(DEBUG_NOT_ONLYTODAY){  //DEBUGとして全て登録する
             set_studyroominfomations( title, link, dateString, description, num );
+            num++;
           }
           else{
             if( day == dateStringNow.getDate() ){   //当日のみセットする
               set_studyroominfomations( title, link, dateString, description, num );
+              num++;
             }
           }
-          num++;
 
 
           //}
 
-        //console.log("i=" +i+" title="+ title + " link="+link + " date="+year+"/"+month+"/"+day);
-        //console.log("body="+description);
+        console.log("i=" +i+" title="+ title + " link="+link + " date="+year+"/"+month+"/"+day);
+        console.log("body="+description);
 
       }
       //全図書館自習室情報(ここまで)
@@ -209,6 +214,7 @@ function set_studyroominfomations( title, link, dateString, description, num ){
   info.title = title;
   info.link = link;
   info.date = dateString;
+  //info.content = description;
   studyroominfomations[num] = info;
           
   console.log("num="+num);
