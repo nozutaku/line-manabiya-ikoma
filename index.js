@@ -117,7 +117,7 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
 });
 
 
-app.get('/push1', function(req, res) {
+app.get('/push1', function(req, res) {    //櫻井さん用
   
   send_notification("test1");
   
@@ -126,18 +126,53 @@ app.get('/push1', function(req, res) {
   
 });
 
-app.get('/push2', function(req, res) {
+//自習室情報リアルタイム取得
+app.get('/push2', function(req, res) {    //のづ用
   
-  send_notification("test2");
+  input_message = "はばたき";
+  
+  make_reply_message()
+  .done(function(){
+    console.log("reply_message = " + reply_message);
+        
+    send_notification("自習室来ない？\n\n" + reply_message);
+  });
+          
+  
   
   console.log("send 200 OK");
   res.status(200).end();
   
 });
 
+//天気取得
 app.get('/push3', function(req, res) {
   
-  send_notification("test3");
+  input_message = "はばたき";
+  
+  make_reply_message()
+  .done(function(){
+    console.log("reply_message = " + reply_message);
+        
+    send_notification("今日は暑いから家より図書館自習室の方がいいと思うよ！\n\n" + reply_message);
+  });
+  
+  console.log("send 200 OK");
+  res.status(200).end();
+  
+});
+
+//受験本番まであと数日！
+app.get('/push4', function(req, res) {
+  
+  input_message = "はばたき";
+  
+  make_reply_message()
+  .done(function(){
+    console.log("reply_message = " + reply_message);
+        
+    send_notification("公立高校受験まであと１３３日！　自習室来ないと。。。\n\n" + reply_message);
+  });
   
   console.log("send 200 OK");
   res.status(200).end();
@@ -211,7 +246,7 @@ function send_notification(push_message){
     }
     var body = {
 //        replyToken: event.replyToken,
-        to: "★your_to★",
+        to: "★UserID(本当はマルチキャストすべき)",
         messages: [{
           type: 'text',
           text: push_message
