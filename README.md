@@ -18,8 +18,9 @@ Configuration:
 
 ```
 heroku 環境変数
-$ export CHANNEL_SECRET=YOUR_CHANNEL_SECRET
-$ export CHANNEL_ACCESS_TOKEN=YOUR_CHANNEL_ACCESS_TOKEN
-$ export PORT=1234
+$ heroku config:set CHANNEL_SECRET=YOUR_CHANNEL_SECRET
+$ heroku config:set CHANNEL_ACCESS_TOKEN=YOUR_CHANNEL_ACCESS_TOKEN
+$ heroku config:set PORT=1234
+$ heroku config:set USERID=USER_USERID
 ```
 

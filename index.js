@@ -1,7 +1,8 @@
 /* 学び舎GO! 生駒の図書館自習室の情報をLINE BOTでお教えします */
 
 /* LINEのCHANNEL_ACCESS_TOKEN を heroku configへ各自セット必要
-　　heroku config:set CHANNEL_ACCESS_TOKEN=xxxx
+    heroku config:set CHANNEL_ACCESS_TOKEN=xxxx
+    heroku config:set USERID=xxxx
 */
 
 var express = require('express');
@@ -75,7 +76,8 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(bodyParser.json());
 
-app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.com    [local] http://localhost:3000 で検証！
+
+app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.com?mode=★    [local] http://localhost:3000/?mode=★ で検証！
   
   
   /* ------------------ test start ------------------
@@ -111,8 +113,35 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   });
   */
   
+  console.log("start get");
+  var url = require('url');
+  var urlInfo = url.parse(req.url, true);
+  var mode = urlInfo.query.mode;
+  console.log ("mode="+mode);
+  
+  
+  if (mode == 1) {    //
+     send_notification("test1");
+
+    console.log("send 200 OK");
+    res.status(200).end(); 
+  }
+  else if (mode == 2){
+    input_message = "はばたき";
+  
+  make_reply_message()
+  .done(function(){
+    console.log("reply_message = " + reply_message);
+        
+    send_notification("自習室来ない？\n\n" + reply_message);
+  });
   console.log("send 200 OK");
   res.status(200).end();
+  }
+  
+  console.log("send 200 OK");
+  res.status(200).end();
+  //console.log (reqbody);
   
 });
 
@@ -246,7 +275,7 @@ function send_notification(push_message){
     }
     var body = {
 //        replyToken: event.replyToken,
-        to: "★UserID(本当はマルチキャストすべき)",
+        to: process.env.USERID,   //個人宛送付forDEBUG　本来はbroadcastすべき
         messages: [{
           type: 'text',
           text: push_message
