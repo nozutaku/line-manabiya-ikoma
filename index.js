@@ -110,10 +110,34 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
     }
   });
   */
+  console.log("start get");
+  var url = require('url');
+  var urlInfo = url.parse(req.url, true);
+  var mode = urlInfo.query.mode;
+  console.log (mode);
+  if (mode == 1) {
+   send_notification("test1");
   
   console.log("send 200 OK");
   res.status(200).end();
+   
+  }
+  else if (mode == 2){
+    input_message = "はばたき";
   
+  make_reply_message()
+  .done(function(){
+    console.log("reply_message = " + reply_message);
+        
+    send_notification("自習室来ない？\n\n" + reply_message);
+  });
+  console.log("send 200 OK");
+  res.status(200).end();
+  }
+  
+  console.log("send 200 OK");
+  res.status(200).end();
+  //console.log (reqbody);
 });
 
 
@@ -239,14 +263,14 @@ app.post('/webhook', function(req, res, next){
 });
 
 function send_notification(push_message){
-  
+  console.log ("hoge");
     var headers = {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + process.env.CHANNEL_ACCESS_TOKEN
     }
     var body = {
 //        replyToken: event.replyToken,
-        to: "★UserID(本当はマルチキャストすべき)",
+        to: "XXXXXXXXXXXXXXXXXXXXXXXXXXXX", // ユーザーID
         messages: [{
           type: 'text',
           text: push_message
