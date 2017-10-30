@@ -77,7 +77,7 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json());
 
 
-app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.com?mode=★    [local] http://localhost:3000/?mode=★ で検証！
+app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.com/?mode=★    [local] http://localhost:3000/?mode=★ で検証！
   
   
   /* ------------------ test start ------------------
@@ -113,6 +113,7 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   });
   */
   
+  /* =============== PUSH通知DEBUG用(ここから) ================ */
   console.log("start get");
   var url = require('url');
   var urlInfo = url.parse(req.url, true);
@@ -120,93 +121,58 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   console.log ("mode="+mode);
   
   
-  if (mode == 1) {    //
+  //LINE BEACON反応したら、お友達来たことをお知らせ
+  if (mode == 1) {
      send_notification("test1");
 
     console.log("send 200 OK");
     res.status(200).end(); 
   }
+  //自習室情報取得してお薦め。ノーマル文章
   else if (mode == 2){
     input_message = "はばたき";
   
-  make_reply_message()
-  .done(function(){
-    console.log("reply_message = " + reply_message);
-        
-    send_notification("自習室来ない？\n\n" + reply_message);
-  });
-  console.log("send 200 OK");
-  res.status(200).end();
+    make_reply_message()
+    .done(function(){
+      console.log("reply_message = " + reply_message);
+
+      send_notification("自習室来ない？\n\n" + reply_message);
+    });
   }
   
+  //天気予報＋自習室情報
+  else if (mode == 3){
+    input_message = "はばたき";
+
+    make_reply_message()
+    .done(function(){
+      console.log("reply_message = " + reply_message);
+
+      send_notification("今日は暑いから家より図書館自習室の方がいいと思うよ！\n\n" + reply_message);
+    });
+  }
+  
+  //受験本番まであと数日！
+  else if (mode == 4){
+    input_message = "はばたき";
+
+    make_reply_message()
+    .done(function(){
+      console.log("reply_message = " + reply_message);
+
+      send_notification("公立高校受験まであと１３３日！　自習室来ないと。。。\n\n" + reply_message);
+    });
+  }
+  /* =============== PUSH通知DEBUG用(ここまで) ================ */
+  
   console.log("send 200 OK");
   res.status(200).end();
-  //console.log (reqbody);
+
   
 });
 
 
-app.get('/push1', function(req, res) {    //櫻井さん用
-  
-  send_notification("test1");
-  
-  console.log("send 200 OK");
-  res.status(200).end();
-  
-});
 
-//自習室情報リアルタイム取得
-app.get('/push2', function(req, res) {    //のづ用
-  
-  input_message = "はばたき";
-  
-  make_reply_message()
-  .done(function(){
-    console.log("reply_message = " + reply_message);
-        
-    send_notification("自習室来ない？\n\n" + reply_message);
-  });
-          
-  
-  
-  console.log("send 200 OK");
-  res.status(200).end();
-  
-});
-
-//天気取得
-app.get('/push3', function(req, res) {
-  
-  input_message = "はばたき";
-  
-  make_reply_message()
-  .done(function(){
-    console.log("reply_message = " + reply_message);
-        
-    send_notification("今日は暑いから家より図書館自習室の方がいいと思うよ！\n\n" + reply_message);
-  });
-  
-  console.log("send 200 OK");
-  res.status(200).end();
-  
-});
-
-//受験本番まであと数日！
-app.get('/push4', function(req, res) {
-  
-  input_message = "はばたき";
-  
-  make_reply_message()
-  .done(function(){
-    console.log("reply_message = " + reply_message);
-        
-    send_notification("公立高校受験まであと１３３日！　自習室来ないと。。。\n\n" + reply_message);
-  });
-  
-  console.log("send 200 OK");
-  res.status(200).end();
-  
-});
 
 
 app.post('/webhook', function(req, res, next){
@@ -221,11 +187,8 @@ app.post('/webhook', function(req, res, next){
     for (var event of req.body.events){
 		//var event = req.body.events[0];
 
-//        if (event.type == 'message' && event.message.text == 'ハロー'){
         if (event.type == 'message'){
-          
-          //★defferをしないとダメかも
-          //var reply_message = make_reply_message( event.message.text );
+  
           
           input_message = event.message.text;
   
@@ -260,6 +223,34 @@ app.post('/webhook', function(req, res, next){
           
 
         }
+
+        // 以下がビーコンに関するコードです        
+        // 参考文献：https://qiita.com/n0bisuke/items/60523ea48109320ad4a5
+        else if (event.type == 'beacon'){
+            console.log("beacon fired");
+            var headers = {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + process.env.CHANNEL_ACCESS_TOKEN
+            }
+            var body = {
+                to: "受信したビーコンからグループのID取得してここに設定",
+                messages: [{
+                    type: 'text',
+                    //text: 'henoheno'
+                    text: '〇〇さんが自習室に来たよ！'    // 〇〇さんが自習室に来たよ！
+                }]
+            }
+            var url = 'https://api.line.me/v2/bot/message/push';
+            request({
+                url: url,
+                method: 'POST',
+                headers: headers,
+                body: body,
+                json: true
+            });
+        }
+      
+      //よくわからないメッセージ受信
       else{
         console.log("NOT text");    //★★LINEスタンプを返そう。「ごめんわからないよー」とかの意味の
       }
@@ -355,7 +346,7 @@ function make_reply_message( ){
   }
   else{ //図書館名無
     if( output == ""){
-      reply_message = "ごめんわからないよ～";   //スタンプに後ほど変更★★
+      reply_message = "ごめんわからないよ～\n生駒の図書館名も入れてね\n 「図書会館」とか「はばたき」「せせらぎ」とかだよ";   //スタンプに後ほど変更★★
     }
     console.log("reply_message = " + reply_message);
     return dfd.resolve();
