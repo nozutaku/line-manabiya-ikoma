@@ -12,6 +12,7 @@ var app = express();
 var $ = require('jquery-deferred');
 
 var StydyPlaceServerConnection = require('./get_studyplace_info.js');
+var get_weatherServerConnection = require('./get_weather.js');
 
 global.StudyRoomInfo = function( ){
   this.title = "";
@@ -56,6 +57,12 @@ var STRING_IKOMA_EKIMAE = "駅前";
 
 var input_message;
 var reply_message;
+
+
+global.today_weather;           //仮（変更ください）
+global.today_temperature_high;  //仮（変更ください）
+global.today_temperature_low;   //仮（変更ください）
+
   
 // listen on port
 const port = process.env.PORT || 3000;
@@ -162,6 +169,18 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
 
       send_notification("公立高校受験まであと１３３日！　自習室来ないと。。。\n\n" + reply_message);
     });
+  }
+  else if ( mode == 9 ){  //天気情報テスト
+      get_weatherServerConnection.get_today_weather()
+      .done(function(){
+        
+        reply_message = "今日の天気＝"+today_weather+"最高気温＝"+today_temperature_high+"最低気温＝"+today_temperature_low;
+        console.log("reply_message = "+reply_message);
+        //send_notification(reply_message);
+      });
+  }
+  else{
+    
   }
   /* =============== PUSH通知DEBUG用(ここまで) ================ */
   
