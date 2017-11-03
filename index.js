@@ -55,8 +55,8 @@ var STRING_IKOMA_MIRAKU2 = "みらく";
 var STRING_IKOMA_EKIMAE = "駅前";
 
 
-var input_message;
-var reply_message;
+var input_message="";
+var reply_message="";
 
 
 global.today_weather;           //仮（変更ください）
@@ -171,13 +171,25 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
     });
   }
   else if ( mode == 9 ){  //天気情報テスト
+    
       get_weatherServerConnection.get_today_weather()
       .done(function(){
+
         
-        reply_message = "今日の天気＝"+today_weather+"最高気温＝"+today_temperature_high+"最低気温＝"+today_temperature_low;
+        if( Number(today_temperature_high) >= 30 ){
+          reply_message += "\n\n今日は暑いね。水分よくとってね。最高気温が"+today_temperature_high+"度になるってよ～。("+today_weather+")";
+        }
+        else if( Number(today_temperature_high) < 15 ){
+          reply_message += "\n\n今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
+        }
+        else{
+          reply_message += "\n\n今日の天気は"+today_weather+"、最高気温は"+today_temperature_high+"度だって。今日も頑張って行きましょう！";
+        }
+        
         console.log("reply_message = "+reply_message);
         //send_notification(reply_message);
       });
+      
   }
   else{
     
@@ -366,6 +378,28 @@ function make_reply_message( ){
   else{ //図書館名無
     if( output == ""){
       reply_message = "ごめんわからないよ～\n生駒の図書館名も入れてね\n 「図書会館」とか「はばたき」「せせらぎ」とかだよ";   //スタンプに後ほど変更★★
+      
+      get_weatherServerConnection.get_today_weather()
+      .done(function(){
+        
+        if( Number(today_temperature_high) >= 30 ){
+          reply_message += "\n\nところで、今日は暑いね。水分よくとってね。最高気温が"+today_temperature_high+"度になるってよ～。("+today_weather+")";
+        }
+        else if( Number(today_temperature_high) < 15 ){
+          reply_message += "\n\nところで、今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
+        }
+        else{
+          reply_message += "\n\nなお、今日の天気は"+today_weather+"、最高気温は"+today_temperature_high+"度だって。今日も頑張って行きましょう！";
+        }
+        
+        
+        console.log("reply_message = "+reply_message);
+        console.log("resolve");
+        return dfd.resolve();
+      });
+      
+      console.log("promise");
+      return dfd.promise();
     }
     console.log("reply_message = " + reply_message);
     return dfd.resolve();
