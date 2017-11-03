@@ -123,6 +123,11 @@ module.exports.get_studyroom_info = function(){
     //info = new StudyRoomInfo();
     var num=0;
     
+    if( response.query.count == 0 ){
+      console.log("------- dfd.resolve --------");
+      return dfd.resolve();
+    }
+    
     //１つの図書館自習室情報
     if( selectplace != PLACE_IKOMA_ALL){ 
       for(var i in response.query.results.item){
