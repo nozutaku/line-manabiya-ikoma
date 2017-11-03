@@ -175,8 +175,11 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
       get_weatherServerConnection.get_today_weather()
       .done(function(){
 
-        
-        if( Number(today_temperature_high) >= 30 ){
+        if( today_temperature_high == ""){
+          console.log("NO temperature");
+          reply_message += "\n\n天気は"+today_weather+ "。だよ";
+        }
+        else if( Number(today_temperature_high) >= 30 ){
           reply_message += "\n\n今日は暑いね。水分よくとってね。最高気温が"+today_temperature_high+"度になるってよ～。("+today_weather+")";
         }
         else if( Number(today_temperature_high) < 15 ){
@@ -382,7 +385,10 @@ function make_reply_message( ){
       get_weatherServerConnection.get_today_weather()
       .done(function(){
         
-        if( Number(today_temperature_high) >= 30 ){
+        if( today_temperature_high == ""){
+          console.log("NO temperature");
+        }
+        else if( Number(today_temperature_high) >= 30 ){
           reply_message += "\n\nところで、今日は暑いね。水分よくとってね。最高気温が"+today_temperature_high+"度になるってよ～。("+today_weather+")";
         }
         else if( Number(today_temperature_high) < 15 ){
