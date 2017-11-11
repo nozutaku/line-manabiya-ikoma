@@ -25,5 +25,12 @@ $ heroku config:set USERID=USER_USERID
 $ heroku config:set YUMAKE_API_KEY=YOUR_API_KEY
 $ heroku config:set YUMAKE_DOMAIN=xxxx
 $ heroku config:set YUMAKE_QUERY=xxxx
+
+$ heroku config:set DATABASE_URL=xxxx
+$ heroku config:set HOST_NAME=xxxx
+$ heroku config:set DATABASE_NAME=xxxx
+$ heroku config:set USER_NAME=xxxx
+$ heroku config:set PASSWORD=xxxx
+
 ```
 

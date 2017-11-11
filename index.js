@@ -5,11 +5,14 @@
     heroku config:set USERID=xxxx
 */
 
+var LOCAL_DEBUG = 0;    //1=Local node.js利用   0=herokuサーバー利用(default)     
+
 var express = require('express');
 var bodyParser = require('body-parser');
 var request = require('request');
 var app = express();
 var $ = require('jquery-deferred');
+var pg = require('pg');
 
 var StydyPlaceServerConnection = require('./get_studyplace_info.js');
 var get_weatherServerConnection = require('./get_weather.js');
@@ -59,11 +62,41 @@ var input_message="";
 var reply_message="";
 
 
-global.today_weather;           //仮（変更ください）
-global.today_temperature_high;  //仮（変更ください）
-global.today_temperature_low;   //仮（変更ください）
+global.today_weather;
+global.today_temperature_high;
+global.today_temperature_low;
 
-  
+
+var LINE_REPLY_URL = "https://api.line.me/v2/bot/message/reply";
+var LINE_PUSH_URL = "https://api.line.me/v2/bot/message/push";
+var LINE_PUSH_URL_MULTICAST = "https://api.line.me/v2/bot/message/multicast";
+
+if( ! LOCAL_DEBUG ){   //heroku
+    pg.defaults.ssl = true; 
+    var connectionString = process.env.DATABASE_URL;
+    var postgres_host = process.env.HOST_NAME;
+    var postgres_databases = process.env.DATABASE_NAME;
+    var postgres_user = process.env.USER_NAME;
+    var postgres_password = process.env.PASSWORD;
+}
+else{               //local node.js
+    var connectionString = "tcp://postgres:postgres@localhost:5432/manabiya_ikoma";
+    var postgres_host = "localhost";
+    var postgres_databases = "manabiya_ikoma";
+    var postgres_user = "postgres";
+    var postgres_password = "postgres";
+}
+
+var TABLE_INSERT_COMMAND_1 = "INSERT INTO ";
+var TABLE_INSERT_COMMAND_2 = " ( id, option1, option2 ) VALUES ($1, $2, $3);";
+
+var FLAG_INSERT = 1;
+var FLAG_DELETE = 0;
+
+var db_table = "userid_table";
+var id_list_text;
+
+
 // listen on port
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
@@ -130,7 +163,8 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   
   //LINE BEACON反応したら、お友達来たことをお知らせ
   if (mode == 1) {
-     send_notification("test1");
+     //send_notification("test1");
+    send_notification_hourly();
 
     console.log("send 200 OK");
     res.status(200).end(); 
@@ -170,27 +204,57 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
       send_notification("公立高校受験まであと１３３日！　自習室来ないと。。。\n\n" + reply_message);
     });
   }
+  else if( mode == 5 ){ //DB test
+    
+    var id = "U2402682c8737739d637feb1f81cf1399";
+    //var id = "1234567";
+    
+    insert_id2db(id);
+    //delete_id2db( id );
+    
+    
+  }
+  else if( mode == 6 ){ //DB test
+    
+    var id = "U2402682c8737739d637feb1f81cf1399";
+    //var id = "1234567";
+    
+    delete_id2db( id );
+    
+    
+  }
+  else if( mode == 7 ){ //DB test
+    
+    read_id_from_db( )
+    .done(function(){
+      console.log("ID_LIST="+ id_list_text);
+    });
+  }
+  
   else if ( mode == 9 ){  //天気情報テスト
     
       get_weatherServerConnection.get_today_weather()
       .done(function(){
 
+        //reply_message = "今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
+        
         if( today_temperature_high == ""){
           console.log("NO temperature");
-          reply_message += "\n\n天気は"+today_weather+ "。だよ";
+          reply_message = "\n\n天気は"+today_weather+ "。だよ";
         }
         else if( Number(today_temperature_high) >= 30 ){
-          reply_message += "\n\n今日は暑いね。水分よくとってね。最高気温が"+today_temperature_high+"度になるってよ～。("+today_weather+")";
+          reply_message = "\n\n今日は暑いね。水分よくとってね。最高気温が"+today_temperature_high+"度になるってよ～。("+today_weather+")";
         }
         else if( Number(today_temperature_high) < 15 ){
-          reply_message += "\n\n今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
+          reply_message = "\n\n今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
         }
         else{
-          reply_message += "\n\n今日の天気は"+today_weather+"、最高気温は"+today_temperature_high+"度だって。今日も頑張って行きましょう！";
+          reply_message = "\n\n今日の天気は"+today_weather+"、最高気温は"+today_temperature_high+"度だって。今日も頑張って行きましょう！";
         }
         
+        
         console.log("reply_message = "+reply_message);
-        //send_notification(reply_message);
+        send_notification(reply_message);
       });
       
   }
@@ -212,6 +276,7 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
 app.post('/webhook', function(req, res, next){
 	
 	console.log("start post method");
+  reply_message = "";   //初期化
 
     res.status(200).end();
 
@@ -220,9 +285,12 @@ app.post('/webhook', function(req, res, next){
 
     for (var event of req.body.events){
 		//var event = req.body.events[0];
-
-        if (event.type == 'message'){
-  
+      
+        if (event.type == 'message'){          
+          console.log("====================\n");
+          console.log("LINE message event come now.")
+          //console.log(event);
+          console.log("====================\n");
           
           input_message = event.message.text;
   
@@ -242,9 +310,9 @@ app.post('/webhook', function(req, res, next){
                     //text: event.message.text    //おうむ返し
                 }]
             }
-            var url = 'https://api.line.me/v2/bot/message/reply';
+
             request({
-                url: url,
+                url: LINE_REPLY_URL,
                 method: 'POST',
                 headers: headers,
                 body: body,
@@ -261,7 +329,11 @@ app.post('/webhook', function(req, res, next){
         // 以下がビーコンに関するコードです        
         // 参考文献：https://qiita.com/n0bisuke/items/60523ea48109320ad4a5
         else if (event.type == 'beacon'){
-            console.log("beacon fired");
+            console.log("====================\n");
+            console.log("beacon event fire.")
+            //console.log(event);
+            console.log("====================\n");
+          
             var headers = {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + process.env.CHANNEL_ACCESS_TOKEN
@@ -274,15 +346,47 @@ app.post('/webhook', function(req, res, next){
                     text: '〇〇さんが自習室に来たよ！'    // 〇〇さんが自習室に来たよ！
                 }]
             }
-            var url = 'https://api.line.me/v2/bot/message/push';
             request({
-                url: url,
+                url: LINE_PUSH_URL,
                 method: 'POST',
                 headers: headers,
                 body: body,
                 json: true
             });
         }
+      
+      // アカウントが友だち追加またはブロック解除された
+      else if(( event.type == 'follow' ) || ( event.type == 'unfollow' )){
+        console.log("====================\n");
+        console.log("follow/unfollow event.ともだち追加/削除してくれたよ")
+        //console.log(event);
+        console.log("====================\n");
+        
+        if( event.source.type == "user" ){
+          if (typeof event.source.userId === 'undefined') {
+            console.log("follow event but not user???");
+          }else{
+            var new_follower_id = event.source.userId;
+            console.log("new_member="+new_follower_id);
+            
+            //★DB追加・削除
+            if( event.type == 'follow' ){
+              insert_id2db( new_follower_id );
+            }
+            else if ( event.type == 'unfollow' ){
+              delete_id2db( new_follower_id );
+            }
+            else{
+              //don't care.
+            }
+            
+          }
+        }
+        else{
+          console.log("follow event but not user???");
+        }
+      }
+      
       
       //よくわからないメッセージ受信
       else{
@@ -292,7 +396,69 @@ app.post('/webhook', function(req, res, next){
     }
 });
 
-function send_notification(push_message){
+
+function send_notification_hourly(){
+  
+  input_message = "はばたき";
+  
+  
+  read_id_from_db( )
+  .done(function(){
+    console.log("ID_LIST="+ id_list_text);
+    if( id_list_text == ""){
+      return;
+    }
+    
+      make_reply_message()
+      .done(function(){
+        console.log("reply_message = " + reply_message);
+
+        send_notification( id_list_text, "はばたき自習室来ない？\n\n" + reply_message);
+        console.log("\n----- send_notification_hourly done! ------\n");
+  });
+    
+    
+  });
+  
+  /*
+  make_reply_message()
+  .done(function(){
+    console.log("reply_message = " + reply_message);
+
+    send_notification( id_list_text, "自習室来ない？\n\n" + reply_message);
+  });
+  */
+        
+  /*
+  get_weatherServerConnection.get_today_weather()
+  .done(function(){
+
+    //reply_message = "今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
+
+    if( today_temperature_high == ""){
+      console.log("NO temperature");
+      reply_message = "\n\n天気は"+today_weather+ "。だよ";
+    }
+    else if( Number(today_temperature_high) >= 30 ){
+      reply_message = "\n\n今日は暑いね。水分よくとってね。最高気温が"+today_temperature_high+"度になるってよ～。("+today_weather+")";
+    }
+    else if( Number(today_temperature_high) < 15 ){
+      reply_message = "\n\n今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
+    }
+    else{
+      reply_message = "\n\n今日の天気は"+today_weather+"、最高気温は"+today_temperature_high+"度だって。今日も頑張って行きましょう！";
+    }
+
+
+    console.log("reply_message = "+reply_message);
+    send_notification(reply_message);
+  });
+  */
+  
+  
+}
+
+function send_notification( destination, push_message){
   
     var headers = {
         'Content-Type': 'application/json',
@@ -300,22 +466,32 @@ function send_notification(push_message){
     }
     var body = {
 //        replyToken: event.replyToken,
-        to: process.env.USERID,   //個人宛送付forDEBUG　本来はbroadcastすべき
+        to: [ destination ], 
+//        to: process.env.USERID, 
         messages: [{
           type: 'text',
           text: push_message
         //text: event.message.text    //おうむ返し
         }]
     }
-    var url = 'https://api.line.me/v2/bot/message/push';
+
       request({
-        url: url,
+   //     url: LINE_PUSH_URL,
+        url: LINE_PUSH_URL_MULTICAST,
         method: 'POST',
         headers: headers,
         body: body,
         json: true
       });
 }
+
+
+
+
+
+
+
+
 
 /* ユーザー入力文字から返答文面を作成 */
 function make_reply_message( ){
@@ -525,4 +701,317 @@ function handleEvent(event) {
 	console.log("message.typ=" + event.message.type );
 }
 
+//////////////////////////////////////////////////////////////////////
+// databaseへ格納する（DBへの格納は非同期なため）
+// return: 無
+//////////////////////////////////////////////////////////////////////
+function insert_id2db( id ){
+    var table_insert_command;
+    var query;
+    
+//===================================
 
+    try{
+        console.log("START connect database");
+        
+        var config = {
+                host: postgres_host,
+                user: postgres_user,
+                database: postgres_databases,
+                password: postgres_password,
+                port: 5432,
+                max: 10, // max number of clients in the pool 
+                idleTimeoutMillis: 5000, 
+        }; 
+        
+        var pool = new pg.Pool(config);
+
+        //pg.connect(connectionString, function(err,client){
+        pool.connect(function(err, client){
+            
+            
+            if(err){
+                console.log("CANNOT open DB");
+                return;
+            }
+            else{
+              console.log("Success to open DB.");
+            }
+           
+
+            var table_insert_command = TABLE_INSERT_COMMAND_1 + db_table + TABLE_INSERT_COMMAND_2;
+            //var table_insert_command = "INSERT INTO userid_table(id, option1, option2) VALUES ('234', '', '');";
+
+            client.query( table_insert_command, [ id, " ", " " ], function(err, result){
+//            client.query( table_insert_command, function(err, result){
+                if(err){
+                    console.log("CANNOT insert table(ID重複も含まれる)");
+                    return;
+                }
+                
+
+                /////////////////////////////////////////////////////
+                //   DBへデータ書き込み
+                /////////////////////////////////////////////////////
+                console.log("success to insert DB.");
+
+                
+
+            client.end(function (err){
+                if(err){
+                    console.log("error.");
+                      return;
+                  }
+                    
+                  console.log("db close");
+                });
+            });
+
+
+   /*  なぜかこの書き込み方うまくいかない      
+          console.log("query="+table_insert_command);
+
+          //書き込み　ここから★★★
+            //query = client.query( table_insert_command, [ id, " ", " " ]);
+            query = client.query( table_insert_command);
+
+            query
+              .on( 'end', function( row, err ){
+                console.log("=========================================");
+                console.log("set id to DB FINISH!!");
+                console.log("=========================================");
+            })
+          
+            .on( 'error', function(error){
+                console.log("[insert_id2db] ERROR!!! cannot insert data to database.");
+                console.log(error);
+            });
+    */
+ 
+        });
+        
+        pool.on('error', function (err, client) {
+            console.error('idle client error', err.message, err.stack);
+        })
+        
+    }catch(e){
+        console.log("UNEXPECTED ERROR: ");
+        
+    };
+//===================================
+ 
+}
+
+//////////////////////////////////////////////////////////////////////
+// databaseから削除する（DBへの格納は非同期なため）
+// return: 無
+//////////////////////////////////////////////////////////////////////
+function delete_id2db( id ){
+    var table_insert_command;
+    var query;
+    
+//===================================
+
+    try{
+        console.log("START connect database");
+        
+        var config = {
+                host: postgres_host,
+                user: postgres_user,
+                database: postgres_databases,
+                password: postgres_password,
+                port: 5432,
+                max: 10, // max number of clients in the pool 
+                idleTimeoutMillis: 5000, 
+        }; 
+        
+        var pool = new pg.Pool(config);
+
+        //pg.connect(connectionString, function(err,client){
+        pool.connect(function(err, client){
+            
+            
+            if(err){
+                console.log("CANNOT open DB");
+                return;
+            }
+            else{
+              console.log("Success to open DB.");
+            }
+           
+
+            var  table_delete_command = "DELETE FROM "+ db_table + " WHERE id='"+id+"'";
+          console.log("query="+table_delete_command);
+          
+            client.query( table_delete_command, function(err, result){
+
+                if(err){
+                    console.log("CANNOT delete table");
+                    return;
+                }
+                
+                console.log("success to delete DB.");
+
+
+            client.end(function (err){
+                if(err){
+                    console.log("error.");
+                      return;
+                  }
+                    
+                  console.log("db close");
+                });
+            });
+        });
+        
+        pool.on('error', function (err, client) {
+            console.error('idle client error', err.message, err.stack);
+        })
+        
+    }catch(e){
+        console.log("UNEXPECTED ERROR: ");
+        
+    };
+//===================================
+ 
+}
+
+
+//////////////////////////////////////////////////////////////////////
+// databaseから読み出す
+// return: 無
+// id_list_textバッファへ格納
+//////////////////////////////////////////////////////////////////////
+function read_id_from_db( ){
+    var table_insert_command;
+    var query;
+  
+    var dfd = new $.Deferred;
+    
+//===================================
+
+    try{
+        console.log("START connect database");
+        
+        var config = {
+                host: postgres_host,
+                user: postgres_user,
+                database: postgres_databases,
+                password: postgres_password,
+                port: 5432,
+                max: 10, // max number of clients in the pool 
+                idleTimeoutMillis: 5000, 
+        }; 
+        
+        var pool = new pg.Pool(config);
+
+        //pg.connect(connectionString, function(err,client){
+        pool.connect(function(err, client){
+            
+            
+            if(err){
+                console.log("CANNOT open DB");
+                console.log("resolve");
+                return dfd.resolve();
+            }
+            else{
+              console.log("Success to open DB.");
+            }
+           
+          var table_insert_command = TABLE_INSERT_COMMAND_1 + db_table + TABLE_INSERT_COMMAND_2;
+          
+          
+          //var table_insert_command = "INSERT INTO userid_table(id, option1, option2) VALUES ('234', '', '');";
+
+      
+            //client.query("SELECT * FROM booklist_table", function(err, result){
+    /* 読み出しOK */
+    
+         
+          //★★★★DB openを複数回行って良いのか？？pool使ってるからOK？（要検証）
+          
+          var sql_text = "SELECT * FROM userid_table";
+            client.query( sql_text, function(err, result){
+                if(err){
+
+                    console.log("CANNOT read table");
+                    console.log("resolve");
+                    return dfd.resolve();
+                }
+                
+
+                /////////////////////////////////////////////////////
+                //   DBからデータ取得
+                /////////////////////////////////////////////////////
+                console.log("DB length= " + result.rows.length);
+              
+                id_list_text = "";
+                var i;
+                for(i=0; i<result.rows.length; i++ ){
+                  if(i>0){
+                    id_list_text += ",";
+                  }
+                  id_list_text += result.rows[i].id;
+                  
+                  console.log("id="+result.rows[i].id);
+                }
+                
+
+            client.end(function (err){
+                if(err){
+                    console.log("error.");
+                    console.log("resolve");
+                    return dfd.resolve();
+                  }
+                    
+                  console.log("db close");
+              
+                  console.log("resolve");
+                  return dfd.resolve();
+                });
+            });
+       
+        });
+        
+        pool.on('error', function (err, client) {
+            console.error('idle client error', err.message, err.stack);
+            console.log("resolve");
+            return dfd.resolve();
+        })
+        
+    }catch(e){
+        console.log("UNEXPECTED ERROR: ");
+        console.log("resolve");
+        return dfd.resolve();
+        
+    };
+//===================================
+/*  
+    table_insert_command = TABLE_INSERT_COMMAND_1 + table + TABLE_INSERT_COMMAND_2;
+    
+    query = client.query( table_insert_command, [ id, "", "" ]);
+  
+    query.on( 'end', function( row, err ){
+
+            
+            //再帰的に呼ぶ。100ms待って呼ぶ(空けないとエラーになる)
+            //setTimeout( function(){
+            //        insert_next_booklist_table( client, table, mode, count+1 )
+            //    }, 500 );
+                
+
+            console.log("=========================================");
+            console.log("set id to DB FINISH!!");
+            console.log("=========================================");
+	    //process.exit(); // heroku schedulerから呼ばれた際、プロセスを終了させるため
+        
+    });
+    query.on( 'error', function(error){
+        console.log("[insert_id2db] ERROR!!! cannot insert data to database.");
+        console.log(error);
+    });
+  */  
+  
+  console.log("promise");
+  return dfd.promise();
+}

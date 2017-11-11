@@ -7,6 +7,7 @@
     "body-parser": "^1.18.2",
     "express": "^4.16.2",
     "jquery-deferred": "^0.3.1",
+    "pg": "^7.4.0",
     "request": "^2.83.0",
     "yql-node": "^0.2.1"
   }

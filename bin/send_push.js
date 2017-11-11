@@ -3,5 +3,5 @@
 
 var api = require('../index.js');
 
-api.send_notification();
+api.send_notification_hourly();
 
