@@ -105,6 +105,7 @@ module.exports.get_studyroom_info = function(){
   
   var dfd = new $.Deferred;
   
+  init_studyroominfomations();
   query = make_query_url( selectplace );
   console.log("query="+query);
   
@@ -225,6 +226,14 @@ function set_studyroominfomations( title, link, dateString, description, num ){
   console.log("num="+num);
   console.log("title="+title);
   console.log("studyroominfomations[" +num+ "].title=" + studyroominfomations[num].title);
+}
+
+function init_studyroominfomations(){
+  if( studyroominfomations.length != 0 ){
+    while( studyroominfomations.length > 0 ){
+      studyroominfomations.pop();
+    }
+  }
 }
 
 function make_query_url( selectplace ){

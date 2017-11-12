@@ -5,6 +5,7 @@
     heroku config:set USERID=xxxx
 */
 
+var DEBUG = 0;          //1=DEBUG 0=RELEASE
 var LOCAL_DEBUG = 0;    //1=Local node.js利用   0=herokuサーバー利用(default)     
 
 var express = require('express');
@@ -94,8 +95,14 @@ var FLAG_INSERT = 1;
 var FLAG_DELETE = 0;
 
 var db_table = "userid_table";
-var id_list_text;
+//var id_list_text;
 
+var id_list = new Array();
+
+
+var PUSH_BROADCAST_MODE = 1;    //push_notification_modeに設定する値
+var PUSH_REPLY_MODE = 2;        //push_notification_modeに設定する値
+global.push_notification_mode = PUSH_REPLY_MODE;
 
 // listen on port
 const port = process.env.PORT || 3000;
@@ -163,8 +170,8 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   
   //LINE BEACON反応したら、お友達来たことをお知らせ
   if (mode == 1) {
-     //send_notification("test1");
-    send_notification_hourly();
+    console.log("check_available_time()="+check_available_time());
+    //send_notification_hourly();
 
     console.log("send 200 OK");
     res.status(200).end(); 
@@ -172,12 +179,17 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   //自習室情報取得してお薦め。ノーマル文章
   else if (mode == 2){
     input_message = "はばたき";
-  
+    
+    var to_array = new Array();
+
+    //to_array[0] = 'xxx';
+    //to_array[1] = 'xxx';
+      
     make_reply_message()
     .done(function(){
       console.log("reply_message = " + reply_message);
 
-      send_notification("自習室来ない？\n\n" + reply_message);
+      send_notification(to_array, "自習室来ない？\n\n" + reply_message);
     });
   }
   
@@ -206,8 +218,8 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   }
   else if( mode == 5 ){ //DB test
     
-    var id = "U2402682c8737739d637feb1f81cf1399";
-    //var id = "1234567";
+
+    var id = "1234567";
     
     insert_id2db(id);
     //delete_id2db( id );
@@ -216,8 +228,8 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   }
   else if( mode == 6 ){ //DB test
     
-    var id = "U2402682c8737739d637feb1f81cf1399";
-    //var id = "1234567";
+
+    var id = "1234567";
     
     delete_id2db( id );
     
@@ -227,7 +239,8 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
     
     read_id_from_db( )
     .done(function(){
-      console.log("ID_LIST="+ id_list_text);
+      send_notification(id_list, "自習室来ない？\n\n");
+      console.log("ID_LIST="+ id_list);
     });
   }
   
@@ -399,21 +412,26 @@ app.post('/webhook', function(req, res, next){
 module.exports.send_notification_hourly = function(req, res){
 //function send_notification_hourly(){
   
-  input_message = "はばたき";
+  input_message = "はばたき";   //★暫定
   
+  if(!DEBUG){
+    if( check_available_time() == 0 ) return;   //自習室時間外には通知しない
+  }
   
   read_id_from_db( )
   .done(function(){
-    console.log("ID_LIST="+ id_list_text);
-    if( id_list_text == ""){
+    console.log("ID_LIST="+ id_list);
+    if( id_list.length == 0){
       return;
     }
     
       make_reply_message()
       .done(function(){
-        console.log("reply_message = " + reply_message);
-
-        send_notification( id_list_text, "はばたき自習室来ない？\n\n" + reply_message);
+        
+        if( reply_message != ""){
+          console.log("reply_message = " + reply_message);
+          send_notification( id_list, "はばたき自習室来ない？\n\n" + reply_message);
+        }
         console.log("\n----- send_notification_hourly done! ------\n");
   });
     
@@ -461,13 +479,14 @@ module.exports.send_notification_hourly = function(req, res){
 
 function send_notification( destination, push_message){
   
+  console.log("send_notification destination="+destination);
     var headers = {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + process.env.CHANNEL_ACCESS_TOKEN
     }
     var body = {
 //        replyToken: event.replyToken,
-        to: [ destination ], 
+          to: destination,
 //        to: process.env.USERID, 
         messages: [{
           type: 'text',
@@ -534,13 +553,30 @@ function make_reply_message( ){
       
       if( studyroominfomations.length > 0 ){
           console.log("studyroominfos[0].title="+studyroominfomations[0].title);
+        
+        //同じデータを何回も配信しないように直近１時間のデータのみをbroadcastする
+        if( push_notification_mode == PUSH_BROADCAST_MODE){
+          var publish_hour = studyroominfomations[0].date.getUTCHours();
+          var now_date = new Date();
+          var now_hour = now_date.getUTCHours();
+          console.log("publish_hour(UTC)="+publish_hour);
+          console.log("now_hour(UTC)= "+now_hour );
           
-          var display_date = make_display_data_format(studyroominfomations[0].date);
+          if( now_hour -1 != publish_hour ){    //１時間以内にリリースされたもの以外はbroadcast配信しない
+            console.log("既に配信されているのでbroadcastしない");
+            console.log("resolve");
+            return dfd.resolve();
+          }
+
+        }
+    
           
-          output = studyroominfomations[0].title + " " 
-            + display_date + " " 
-            + studyroominfomations[0].content + " "
-            + studyroominfomations[0].link;
+        var display_date = make_display_data_format(studyroominfomations[0].date);
+          
+        output = studyroominfomations[0].title + " " 
+          + display_date + " " 
+          + studyroominfomations[0].content + " "
+          + studyroominfomations[0].link;
       }
       
       if( output == ""){
@@ -946,6 +982,13 @@ function read_id_from_db( ){
                 /////////////////////////////////////////////////////
                 console.log("DB length= " + result.rows.length);
               
+                var i;
+                for(i=0; i<result.rows.length; i++ ){
+                  id_list[i] = result.rows[i].id;
+                  
+                  console.log("id="+result.rows[i].id);
+                }
+              /*
                 id_list_text = "";
                 var i;
                 for(i=0; i<result.rows.length; i++ ){
@@ -956,6 +999,7 @@ function read_id_from_db( ){
                   
                   console.log("id="+result.rows[i].id);
                 }
+              */
                 
 
             client.end(function (err){
@@ -1015,4 +1059,21 @@ function read_id_from_db( ){
   
   console.log("promise");
   return dfd.promise();
+}
+
+
+function check_available_time(){
+  
+  var now_date = new Date();
+  var now_hour = now_date.getUTCHours();   //getHours()だとherokuはUTCだがwindowsPCではlocaltime(JST)なのでUTCで取得で統一
+  
+  console.log("now_hour = "+ now_hour);
+  
+  if(( now_hour >= 0 ) && ( now_hour <= 8 )){   //JST 9時～17時
+    return 1;
+  }
+  else
+    return 0;
+  
+  
 }

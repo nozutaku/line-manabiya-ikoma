@@ -3,5 +3,6 @@
 
 var api = require('../index.js');
 
+push_notification_mode = 1;   //broadcast
 api.send_notification_hourly();
 
