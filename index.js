@@ -396,8 +396,8 @@ app.post('/webhook', function(req, res, next){
     }
 });
 
-
-function send_notification_hourly(){
+module.exports.send_notification_hourly = function(req, res){
+//function send_notification_hourly(){
   
   input_message = "はばたき";
   
@@ -456,7 +456,8 @@ function send_notification_hourly(){
   */
   
   
-}
+//}
+};    //module.exports おわり
 
 function send_notification( destination, push_message){
   
