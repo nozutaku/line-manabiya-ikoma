@@ -580,7 +580,14 @@ function make_reply_message( ){
       }
       
       if( output == ""){
-        output = "今日は自習室やってないかも～";
+        if( push_notification_mode != PUSH_BROADCAST_MODE){
+          output = "今日は自習室やってないかも～";
+        }
+        else{
+          console.log("本日は自習室開館してないので敢えてbroadcast配信しない");
+          console.log("resolve");
+          return dfd.resolve();
+        }
       }
       reply_message = output;
       console.log("reply_message = " + reply_message);

@@ -139,8 +139,8 @@ module.exports.get_studyroom_info = function(){
           var description = entry.description;
           var dateString = new Date(entry.pubDate);
           var year = dateString.getFullYear();
-          var month = dateString.getMonth() + 1;
-          var day = dateString.getDate();
+          var month = dateString.getMonth() + 1;    //getMonthは0～11という不思議な仕様なので１加算
+          var day = dateString.getUTCDate();
 
           var dateStringNow = new Date();
 
@@ -149,9 +149,10 @@ module.exports.get_studyroom_info = function(){
             num++;
           }
           else{
-              console.log("day="+day);
-              console.log("date="+dateStringNow.getDate());
-            if( day+1 == dateStringNow.getDate() ){   //当日のみセットする
+              console.log("publish date(UTC)="+day);
+              console.log("now date(UTC)="+dateStringNow.getUTCDate());
+            if( day == dateStringNow.getUTCDate() ){   //当日のみセットする
+ //           if( day+1 == dateStringNow.getDate() ){   //当日のみセットする
               set_studyroominfomations( title, link, dateString, description, num );
               num++;
             }
