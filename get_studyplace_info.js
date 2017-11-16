@@ -149,10 +149,10 @@ module.exports.get_studyroom_info = function(){
             num++;
           }
           else{
-              console.log("publish date(UTC)="+day);
-              console.log("now date(UTC)="+dateStringNow.getUTCDate());
-            if( day == dateStringNow.getUTCDate() ){   //当日のみセットする
- //           if( day+1 == dateStringNow.getDate() ){   //当日のみセットする
+              //console.log("publish date(UTC)="+day);
+              //console.log("now date(UTC)="+dateStringNow.getUTCDate());
+
+            if( is_today( dateString )){
               set_studyroominfomations( title, link, dateString, description, num );
               num++;
             }
@@ -278,3 +278,27 @@ function make_query_url( selectplace ){
   
 }
 
+function is_today( target_dateObj ){
+  
+  var TIME_THRESHOLD = 12 * 60 * 60 * 1000;    //12H
+  var dateObjNow = new Date();
+  //var dateObjNow = new Date("Wed, 15 Nov 2017 09:00:00 +0900"); 
+
+  //console.log("now date="+dateObjNow.getUTCDate());
+  //console.log("now hour="+dateObjNow.getUTCHours());
+  //console.log("target date="+target_dateObj.getUTCDate());
+  //console.log("target hour="+target_dateObj.getUTCHours());
+  
+  
+  
+  //厳密に今日か否かでは無く、暫定的に12時間以内か否かで判定しよう
+  if( dateObjNow.getTime() - target_dateObj.getTime() < TIME_THRESHOLD ){
+    console.log("is today(within 12H)");
+    return 1;
+  }
+  else{
+    return 0;
+  }
+  
+  
+}

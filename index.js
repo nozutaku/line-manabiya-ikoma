@@ -170,11 +170,14 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   
   //LINE BEACON反応したら、お友達来たことをお知らせ
   if (mode == 1) {
-    console.log("check_available_time()="+check_available_time());
+    if(!DEBUG){
+      if( check_available_time() == 0 ){   //自習室時間外には通知しない
+        console.log("check_available_time()=0");
+      }
+    }
+    //console.log("check_available_time()="+check_available_time());
     //send_notification_hourly();
-
-    console.log("send 200 OK");
-    res.status(200).end(); 
+ 
   }
   //自習室情報取得してお薦め。ノーマル文章
   else if (mode == 2){
@@ -189,7 +192,7 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
     .done(function(){
       console.log("reply_message = " + reply_message);
 
-      send_notification(to_array, "自習室来ない？\n\n" + reply_message);
+      //send_notification(to_array, "テストっす\n\n" + reply_message);
     });
   }
   
@@ -344,15 +347,26 @@ app.post('/webhook', function(req, res, next){
         else if (event.type == 'beacon'){
             console.log("====================\n");
             console.log("beacon event fire.")
-            //console.log(event);
+            console.log(event);
             console.log("====================\n");
+          
+            var beacon_userid = event.source.userId;
+            var beacon_usertype = event.source.type;
+            var beacon_hwid = event.beacon.hwid;
+            var beacon_inout = event.beacon.type;
+            console.log("beacon userid="+beacon_userid);
+            console.log("beacon usertype="+beacon_usertype);
+            console.log("beacon hwid="+beacon_hwid);
+            console.log("beacon in/out="+beacon_inout);
+          
           
             var headers = {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + process.env.CHANNEL_ACCESS_TOKEN
             }
             var body = {
-                to: "受信したビーコンからグループのID取得してここに設定",
+                to: process.env.USERID, 
+ //               to: "受信したビーコンからグループのID取得してここに設定",
                 messages: [{
                     type: 'text',
                     //text: 'henoheno'
@@ -415,7 +429,10 @@ module.exports.send_notification_hourly = function(req, res){
   input_message = "はばたき";   //★暫定
   
   if(!DEBUG){
-    if( check_available_time() == 0 ) return;   //自習室時間外には通知しない
+    if( check_available_time() == 0 ){
+      process.exit(); // heroku schedulerから呼ばれた際、プロセスを終了させるため
+      return;   //自習室時間外には通知しない
+    }
   }
   
   read_id_from_db( )
@@ -556,16 +573,23 @@ function make_reply_message( ){
         
         //同じデータを何回も配信しないように直近１時間のデータのみをbroadcastする
         if( push_notification_mode == PUSH_BROADCAST_MODE){
-          var publish_hour = studyroominfomations[0].date.getUTCHours();
-          var now_date = new Date();
-          var now_hour = now_date.getUTCHours();
-          console.log("publish_hour(UTC)="+publish_hour);
-          console.log("now_hour(UTC)= "+now_hour );
           
-          if( now_hour -1 != publish_hour ){    //１時間以内にリリースされたもの以外はbroadcast配信しない
+          var now_date = new Date();
+  //        var now_date = new Date("Wed, 15 Nov 2017 9:00:00 +0900");
+          
+
+          console.log("publish_hour(UTC)="+studyroominfomations[0].date.getUTCHours());
+          console.log("now_hour(UTC)= "+now_date.getUTCHours() );
+          
+          var TIME_ONE_HOUR = 60 * 60 * 1000;    //1H
+          if( now_date.getTime() - studyroominfomations[0].date.getTime() > TIME_ONE_HOUR ){
+
             console.log("既に配信されているのでbroadcastしない");
             console.log("resolve");
             return dfd.resolve();
+          }
+          else{
+            console.log("1H以内。配信開始");
           }
 
         }
@@ -1074,13 +1098,14 @@ function check_available_time(){
   var now_date = new Date();
   var now_hour = now_date.getUTCHours();   //getHours()だとherokuはUTCだがwindowsPCではlocaltime(JST)なのでUTCで取得で統一
   
-  console.log("now_hour = "+ now_hour);
-  
   if(( now_hour >= 0 ) && ( now_hour <= 8 )){   //JST 9時～17時
+    console.log("now_hour(UTC) = "+ now_hour + "available_time");
     return 1;
   }
-  else
+  else{
+    console.log("now_hour(UTC) = "+ now_hour + "NOT available_time");
     return 0;
+  }
   
   
 }
