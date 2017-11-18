@@ -89,10 +89,14 @@ else{               //local node.js
 }
 
 var TABLE_INSERT_COMMAND_1 = "INSERT INTO ";
-var TABLE_INSERT_COMMAND_2 = " ( id, option1, option2 ) VALUES ($1, $2, $3);";
+var TABLE_INSERT_COMMAND_2 = " ( id, type ) VALUES ($1, $2);";
+//var TABLE_INSERT_COMMAND_2 = " ( id, option1, option2 ) VALUES ($1, $2, $3);";
 
 var FLAG_INSERT = 1;
 var FLAG_DELETE = 0;
+
+var TYPE_USER = 1;
+var TYPE_GROUP = 2;
 
 var db_table = "userid_table";
 //var id_list_text;
@@ -252,7 +256,8 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
 
     var id = "1234567";
     
-    insert_id2db(id);
+    //insert_id2db( id, TYPE_USER );
+    insert_id2db( id, TYPE_GROUP );
     //delete_id2db( id );
     
     
@@ -270,7 +275,7 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
     
     read_id_from_db( )
     .done(function(){
-      send_notification(id_list, "自習室来ない？\n\n");
+ //     send_notification(id_list, "自習室来ない？\n\n");
       console.log("ID_LIST="+ id_list);
     });
   }
@@ -375,7 +380,7 @@ app.post('/webhook', function(req, res, next){
         else if (event.type == 'beacon'){
             console.log("====================\n");
             console.log("beacon event fire.")
-            //console.log(event);
+            console.log(event);
             console.log("====================\n");
           
             var beacon_userid = event.source.userId;
@@ -394,6 +399,7 @@ app.post('/webhook', function(req, res, next){
             }
             var body = {
                 to: process.env.USERID, 
+//                to: process.env.MYTEST_GROUP_ID, 
                 messages: [{
                     type: 'text',
                     //text: 'henoheno'
@@ -413,7 +419,7 @@ app.post('/webhook', function(req, res, next){
       else if(( event.type == 'follow' ) || ( event.type == 'unfollow' )){
         console.log("====================\n");
         console.log("follow/unfollow event.ともだち追加/削除してくれたよ")
-        //console.log(event);
+        console.log(event);
         console.log("====================\n");
         
         if( event.source.type == "user" ){
@@ -425,7 +431,7 @@ app.post('/webhook', function(req, res, next){
             
             //★DB追加・削除
             if( event.type == 'follow' ){
-              insert_id2db( new_follower_id );
+              insert_id2db( new_follower_id, TYPE_USER );
             }
             else if ( event.type == 'unfollow' ){
               delete_id2db( new_follower_id );
@@ -454,19 +460,17 @@ app.post('/webhook', function(req, res, next){
           }else{
             var new_group_id = event.source.groupId;
             console.log("new_group="+new_group_id);
-            
-    /*        
+                    
             //★DB追加・削除
             if( event.type == 'join' ){
-              insert_id2db( new_follower_id );
+              insert_id2db( new_follower_id, TYPE_GROUP );
             }
             else if ( event.type == 'leave' ){
               delete_id2db( new_follower_id );
             }
             else{
               //don't care.
-            }
-    */        
+            }        
           }
         }
         else{
@@ -852,7 +856,7 @@ function handleEvent(event) {
 // databaseへ格納する（DBへの格納は非同期なため）
 // return: 無
 //////////////////////////////////////////////////////////////////////
-function insert_id2db( id ){
+function insert_id2db( id, type ){
     var table_insert_command;
     var query;
     
@@ -889,7 +893,7 @@ function insert_id2db( id ){
             var table_insert_command = TABLE_INSERT_COMMAND_1 + db_table + TABLE_INSERT_COMMAND_2;
             //var table_insert_command = "INSERT INTO userid_table(id, option1, option2) VALUES ('234', '', '');";
 
-            client.query( table_insert_command, [ id, " ", " " ], function(err, result){
+            client.query( table_insert_command, [ id, type ], function(err, result){
 //            client.query( table_insert_command, function(err, result){
                 if(err){
                     console.log("CANNOT insert table(ID重複も含まれる)");
@@ -913,27 +917,6 @@ function insert_id2db( id ){
                   console.log("db close");
                 });
             });
-
-
-   /*  なぜかこの書き込み方うまくいかない      
-          console.log("query="+table_insert_command);
-
-          //書き込み　ここから★★★
-            //query = client.query( table_insert_command, [ id, " ", " " ]);
-            query = client.query( table_insert_command);
-
-            query
-              .on( 'end', function( row, err ){
-                console.log("=========================================");
-                console.log("set id to DB FINISH!!");
-                console.log("=========================================");
-            })
-          
-            .on( 'error', function(error){
-                console.log("[insert_id2db] ERROR!!! cannot insert data to database.");
-                console.log(error);
-            });
-    */
  
         });
         
@@ -1096,7 +1079,7 @@ function read_id_from_db( ){
                 for(i=0; i<result.rows.length; i++ ){
                   id_list[i] = result.rows[i].id;
                   
-                  console.log("id="+result.rows[i].id);
+                  console.log("id="+result.rows[i].id + " type="+result.rows[i].type);
                 }
               /*
                 id_list_text = "";

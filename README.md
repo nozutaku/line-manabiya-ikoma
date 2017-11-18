@@ -33,4 +33,10 @@ $ heroku config:set USER_NAME=xxxx
 $ heroku config:set PASSWORD=xxxx
 
 ```
-
+```
+heroku postgres DB構造
+CREATE TABLE userid_table (
+  id varchar(64) unique,
+  type integer,
+);
+```
