@@ -20,7 +20,7 @@ module.exports.get_today_weather = function(){
   if(DEBUG){    //local node.js設定
     var yumake_domain = "★非公開。各自設定しましょう★";
     var YUMAKE_API_KEY = "★非公開。各自設定しましょう★";
-    var query = "★非公開。各自設定しましょう★" + + "?code=29&key=" + YUMAKE_API_KEY + "&format=json";   //奈良県=29
+    var query = "★非公開。各自設定しましょう★" + "?code=29&key=" + YUMAKE_API_KEY + "&format=json";   //奈良県=29  
   }
   else{ //heroku
     var yumake_domain = process.env.YUMAKE_DOMAIN;

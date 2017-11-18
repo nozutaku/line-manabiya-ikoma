@@ -185,12 +185,40 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
     
     var to_array = new Array();
 
-    //to_array[0] = 'xxx';
+    //to_array[0] = process.env.USERID;
     //to_array[1] = 'xxx';
       
     make_reply_message()
     .done(function(){
-      console.log("reply_message = " + reply_message);
+      console.log("reply_message1 = " + reply_message);
+      
+  /* ------------ */
+  get_weatherServerConnection.get_today_weather()
+  .done(function(){
+
+
+    
+    reply_message += "\n\nついでに今日のいこまの天気を教えるね。\n";
+
+    if( today_temperature_high == ""){
+      console.log("NO temperature");
+      reply_message += "天気は"+today_weather+ "。だよ";
+    }
+    else if( Number(today_temperature_high) >= 30 ){
+      reply_message += "今日は暑いね。水分よくとってね。最高気温が"+today_temperature_high+"度になるってよ～。("+today_weather+")";
+    }
+    else if( Number(today_temperature_high) < 15 ){
+      reply_message += "今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
+    }
+    else{
+      reply_message += "今日の天気は"+today_weather+"、最高気温は"+today_temperature_high+"度だって。今日も頑張って行きましょう！";
+    }
+
+
+    console.log("reply_message = "+reply_message);
+    //send_notification(to_array, reply_message);
+  });      
+  /* ------------ */
 
       //send_notification(to_array, "テストっす\n\n" + reply_message);
     });
@@ -305,7 +333,7 @@ app.post('/webhook', function(req, res, next){
         if (event.type == 'message'){          
           console.log("====================\n");
           console.log("LINE message event come now.")
-          //console.log(event);
+          console.log(event);
           console.log("====================\n");
           
           input_message = event.message.text;
@@ -347,7 +375,7 @@ app.post('/webhook', function(req, res, next){
         else if (event.type == 'beacon'){
             console.log("====================\n");
             console.log("beacon event fire.")
-            console.log(event);
+            //console.log(event);
             console.log("====================\n");
           
             var beacon_userid = event.source.userId;
@@ -366,11 +394,10 @@ app.post('/webhook', function(req, res, next){
             }
             var body = {
                 to: process.env.USERID, 
- //               to: "受信したビーコンからグループのID取得してここに設定",
                 messages: [{
                     type: 'text',
                     //text: 'henoheno'
-                    text: '〇〇さんが自習室に来たよ！'    // 〇〇さんが自習室に来たよ！
+                    text: 'お友達が自習室にいるよ！誰かは行ってのお楽しみ！！'
                 }]
             }
             request({
@@ -414,7 +441,38 @@ app.post('/webhook', function(req, res, next){
         }
       }
       
-      
+      // グループまたはトークルームに参加
+      else if(( event.type == 'join' ) || ( event.type == 'leave' )){
+        console.log("====================\n");
+        console.log("join/leave event.グループ追加/削除してくれたよ")
+        console.log(event);
+        console.log("====================\n");
+        
+        if( event.source.type == "group" ){
+          if (typeof event.source.groupId === 'undefined') {
+            console.log("join event but not group???");
+          }else{
+            var new_group_id = event.source.groupId;
+            console.log("new_group="+new_group_id);
+            
+    /*        
+            //★DB追加・削除
+            if( event.type == 'join' ){
+              insert_id2db( new_follower_id );
+            }
+            else if ( event.type == 'leave' ){
+              delete_id2db( new_follower_id );
+            }
+            else{
+              //don't care.
+            }
+    */        
+          }
+        }
+        else{
+          console.log("follow event but not user???");
+        }
+      }
       //よくわからないメッセージ受信
       else{
         console.log("NOT text");    //★★LINEスタンプを返そう。「ごめんわからないよー」とかの意味の
@@ -446,8 +504,35 @@ module.exports.send_notification_hourly = function(req, res){
       .done(function(){
         
         if( reply_message != ""){
-          console.log("reply_message = " + reply_message);
-          send_notification( id_list, "はばたき自習室来ない？\n\n" + reply_message);
+          console.log("reply_message1 = " + reply_message);
+          
+             reply_message = "はばたき自習室来ない？\n\n" + reply_message;       
+  /* ------------ */
+          get_weatherServerConnection.get_today_weather()
+          .done(function(){
+
+            reply_message += "\n\nついでに今日のいこまの天気を教えるね。\n";
+
+            if( today_temperature_high == ""){
+              console.log("NO temperature");
+              reply_message += "天気は"+today_weather+ "。だよ";
+            }
+            else if( Number(today_temperature_high) >= 30 ){
+              reply_message += "今日は暑いね。水分よくとってね。最高気温が"+today_temperature_high+"度になるってよ～。("+today_weather+")";
+            }
+            else if( Number(today_temperature_high) < 15 ){
+              reply_message += "今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
+            }
+            else{
+              reply_message += "今日の天気は"+today_weather+"、最高気温は"+today_temperature_high+"度だって。今日も頑張って行きましょう！";
+            }
+
+
+            console.log("reply_message = "+reply_message);
+            send_notification( id_list, reply_message );
+        });      
+        /* ------------ */
+          //send_notification( id_list, "はばたき自習室来ない？\n\n" + reply_message);
         }
         console.log("\n----- send_notification_hourly done! ------\n");
   });
@@ -455,14 +540,7 @@ module.exports.send_notification_hourly = function(req, res){
     
   });
   
-  /*
-  make_reply_message()
-  .done(function(){
-    console.log("reply_message = " + reply_message);
 
-    send_notification( id_list_text, "自習室来ない？\n\n" + reply_message);
-  });
-  */
         
   /*
   get_weatherServerConnection.get_today_weather()
@@ -581,7 +659,8 @@ function make_reply_message( ){
           console.log("publish_hour(UTC)="+studyroominfomations[0].date.getUTCHours());
           console.log("now_hour(UTC)= "+now_date.getUTCHours() );
           
-          var TIME_ONE_HOUR = 60 * 60 * 1000;    //1H
+          var TIME_ONE_HOUR = 60 * 60 * 1000;    //1H   
+    //    var TIME_ONE_HOUR = 24* 60 * 60 * 1000;    //24H for DEBUG 
           if( now_date.getTime() - studyroominfomations[0].date.getTime() > TIME_ONE_HOUR ){
 
             console.log("既に配信されているのでbroadcastしない");
