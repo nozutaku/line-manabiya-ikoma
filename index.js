@@ -174,13 +174,9 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   console.log ("mode="+mode);
   
   
-  //LINE BEACON反応したら、お友達来たことをお知らせ
+  //なんでもTEST
   if (mode == 1) {
-    if(!DEBUG){
-      if( check_available_time() == 0 ){   //自習室時間外には通知しない
-        console.log("check_available_time()=0");
-      }
-    }
+
     //console.log("check_available_time()="+check_available_time());
     //send_notification_hourly();
  
@@ -671,7 +667,7 @@ function make_reply_message( ){
           console.log("now_hour(UTC)= "+now_date.getUTCHours() );
           
           var TIME_ONE_HOUR = 60 * 60 * 1000;    //1H   
-    //    var TIME_ONE_HOUR = 12* 60 * 60 * 1000;    //24H for DEBUG 
+    //      var TIME_ONE_HOUR = 12* 60 * 60 * 1000;    //24H for DEBUG 
           if( now_date.getTime() - studyroominfomations[0].date.getTime() > TIME_ONE_HOUR ){
 
             console.log("既に配信されているのでbroadcastしない");
@@ -685,10 +681,10 @@ function make_reply_message( ){
         }
     
           
-        var display_date = make_display_data_format(studyroominfomations[0].date);
+ //       var display_date = make_display_data_format(studyroominfomations[0].date);
           
         output = studyroominfomations[0].title + " " 
-          + display_date + " " 
+//          + display_date + " " 
           + studyroominfomations[0].content + " "
           + studyroominfomations[0].link;
       }
@@ -768,10 +764,10 @@ function make_lib_studyplace_status_message( input ){
           console.log("---------------------------");
           console.log("studyroominfos["+i+"].title="+studyroominfomations[i].title);
           
-          var display_date = make_display_data_format(studyroominfomations[i].date);
+          //var display_date = make_display_data_format(studyroominfomations[i].date);
           
           output += studyroominfomations[i].title + " " 
-            + display_date + " " 
+            //+ display_date + " " 
             //+ studyroominfomations[i].content + " "
             + studyroominfomations[i].link;
                     
@@ -839,13 +835,19 @@ function pickup_lib_name( str ){
   return output_lib_num;
 }
 
+
+//使わない関数
 function make_display_data_format( date ){
   var output;
   
   var dateString = new Date( date );
   var year = dateString.getFullYear();
   var month = dateString.getMonth() + 1;
-  var day = dateString.getDate() + 1;
+  
+  //var day = dateString.getDate() + 1;
+  var day = dateString.getUTCDate();
+  var hour = dateString.getUTCHours();
+  if(( hour >= 15 ) && ( hour <= 23))  day++;   //★月始めや年始で一意にインクリメントするとバグ発生するよ！！！
   
   output = year+"/"+month+"/"+day;
   

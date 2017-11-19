@@ -16,16 +16,14 @@ var $ = require('jquery-deferred');
 module.exports.get_today_weather = function(){
   var dfd = new $.Deferred;
   
-  
-  if(DEBUG){    //local node.js設定
-    var yumake_domain = "★非公開。各自設定しましょう★";
-    var YUMAKE_API_KEY = "★非公開。各自設定しましょう★";
-    var query = "★非公開。各自設定しましょう★" + "?code=29&key=" + YUMAKE_API_KEY + "&format=json";   //奈良県=29  
-  }
-  else{ //heroku
-    var yumake_domain = process.env.YUMAKE_DOMAIN;
-    var query = "/1.1/" + process.env.YUMAKE_QUERY + "?code=29&key=" + process.env.YUMAKE_API_KEY + "&format=json";
-  }
+  /* heroku は環境変数にセットすること
+     windowsは node index.jsの前に下記のように環境変数を記載すること(なぜかsetでうまくいかない)
+     YUMAKE_DOMAIN=xx YUMAKE_QUERY=yy YUMAKE_API_KEY=zzz node index.js
+
+  */
+  var yumake_domain = process.env.YUMAKE_DOMAIN;
+  var query = "/1.1/" + process.env.YUMAKE_QUERY + "?code=29&key=" + process.env.YUMAKE_API_KEY + "&format=json";
+
 
   
   today_weather = "";
