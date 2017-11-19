@@ -95,8 +95,10 @@ var TABLE_INSERT_COMMAND_2 = " ( id, type ) VALUES ($1, $2);";
 var FLAG_INSERT = 1;
 var FLAG_DELETE = 0;
 
+
 var TYPE_USER = 1;
 var TYPE_GROUP = 2;
+var select_type = 0;  //初期値
 
 var db_table = "userid_table";
 //var id_list_text;
@@ -272,6 +274,9 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
     
   }
   else if( mode == 7 ){ //DB test
+    
+    //select_type = TYPE_USER;    //read_id_from_db()を呼ぶための設定
+    select_type = TYPE_GROUP;
     
     read_id_from_db( )
     .done(function(){
@@ -497,6 +502,8 @@ module.exports.send_notification_hourly = function(req, res){
     }
   }
   
+  select_type = TYPE_USER;  //read_id_from_db()への入力
+  
   read_id_from_db( )
   .done(function(){
     console.log("ID_LIST="+ id_list);
@@ -664,7 +671,7 @@ function make_reply_message( ){
           console.log("now_hour(UTC)= "+now_date.getUTCHours() );
           
           var TIME_ONE_HOUR = 60 * 60 * 1000;    //1H   
-    //    var TIME_ONE_HOUR = 24* 60 * 60 * 1000;    //24H for DEBUG 
+    //    var TIME_ONE_HOUR = 12* 60 * 60 * 1000;    //24H for DEBUG 
           if( now_date.getTime() - studyroominfomations[0].date.getTime() > TIME_ONE_HOUR ){
 
             console.log("既に配信されているのでbroadcastしない");
@@ -1010,13 +1017,15 @@ function delete_id2db( id ){
 //////////////////////////////////////////////////////////////////////
 // databaseから読み出す
 // return: 無
-// id_list_textバッファへ格納
+// [入力] sql_textに TYPE_USER or TYPE_GROUPを設定すること
+// [出力] id_list_textバッファへ格納
 //////////////////////////////////////////////////////////////////////
 function read_id_from_db( ){
     var table_insert_command;
     var query;
   
     var dfd = new $.Deferred;
+  
     
 //===================================
 
@@ -1048,10 +1057,7 @@ function read_id_from_db( ){
               console.log("Success to open DB.");
             }
            
-          var table_insert_command = TABLE_INSERT_COMMAND_1 + db_table + TABLE_INSERT_COMMAND_2;
-          
-          
-          //var table_insert_command = "INSERT INTO userid_table(id, option1, option2) VALUES ('234', '', '');";
+
 
       
             //client.query("SELECT * FROM booklist_table", function(err, result){
@@ -1059,8 +1065,19 @@ function read_id_from_db( ){
     
          
           //★★★★DB openを複数回行って良いのか？？pool使ってるからOK？（要検証）
+          var sql_text;
+          if( select_type == TYPE_USER ){
+            var sql_text = "SELECT * FROM userid_table where type=1;";
+          }
+          else if( select_type == TYPE_GROUP ){
+            var sql_text = "SELECT * FROM userid_table where type=2;";
+          }
+          else{
+              console.log("invalid select_type="+select_type);
+              console.log("resolve");
+              return dfd.resolve();            
+          }
           
-          var sql_text = "SELECT * FROM userid_table";
             client.query( sql_text, function(err, result){
                 if(err){
 
