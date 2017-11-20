@@ -72,6 +72,9 @@ var LINE_REPLY_URL = "https://api.line.me/v2/bot/message/reply";
 var LINE_PUSH_URL = "https://api.line.me/v2/bot/message/push";
 var LINE_PUSH_URL_MULTICAST = "https://api.line.me/v2/bot/message/multicast";
 
+var TYPE_PUSH = 1;
+var TYPE_MULTICAST= 2;
+
 if( ! LOCAL_DEBUG ){   //heroku
     pg.defaults.ssl = true; 
     var connectionString = process.env.DATABASE_URL;
@@ -177,6 +180,8 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   //なんでもTEST
   if (mode == 1) {
 
+    send_notification_to_all_group();
+    
     //console.log("check_available_time()="+check_available_time());
     //send_notification_hourly();
  
@@ -187,7 +192,7 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
     
     var to_array = new Array();
 
-    //to_array[0] = process.env.USERID;
+    to_array[0] = process.env.USERID;
     //to_array[1] = 'xxx';
       
     make_reply_message()
@@ -218,11 +223,11 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
 
 
     console.log("reply_message = "+reply_message);
-    //send_notification(to_array, reply_message);
+    send_notification( to_array, reply_message, TYPE_MULTICAST );
   });      
   /* ------------ */
 
-      //send_notification(to_array, "テストっす\n\n" + reply_message);
+      //send_notification(to_array, "テストっす\n\n" + reply_message, TYPE_MULTICAST);
     });
   }
   
@@ -234,7 +239,7 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
     .done(function(){
       console.log("reply_message = " + reply_message);
 
-      send_notification("今日は暑いから家より図書館自習室の方がいいと思うよ！\n\n" + reply_message);
+      send_notification("今日は暑いから家より図書館自習室の方がいいと思うよ！\n\n" + reply_message, TYPE_MULTICAST);
     });
   }
   
@@ -246,7 +251,7 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
     .done(function(){
       console.log("reply_message = " + reply_message);
 
-      send_notification("公立高校受験まであと１３３日！　自習室来ないと。。。\n\n" + reply_message);
+      send_notification("公立高校受験まであと１３３日！　自習室来ないと。。。\n\n" + reply_message, TYPE_MULTICAST);
     });
   }
   else if( mode == 5 ){ //DB test
@@ -271,41 +276,24 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   }
   else if( mode == 7 ){ //DB test
     
-    //select_type = TYPE_USER;    //read_id_from_db()を呼ぶための設定
-    select_type = TYPE_GROUP;
+    select_type = TYPE_USER;    //read_id_from_db()を呼ぶための設定
+    //select_type = TYPE_GROUP;
     
     read_id_from_db( )
     .done(function(){
- //     send_notification(id_list, "自習室来ない？\n\n");
+      if( select_type == TYPE_USER ){
+        //send_notification(id_list, "バージョンアップに向けての最終テストちう\n\n", TYPE_MULTICAST);
+      }
+      else if( select_type == TYPE_GROUP ){
+        //send_notification(id_list, "自習室来ない？\n\n", TYPE_PUSH);
+      }
+      
       console.log("ID_LIST="+ id_list);
     });
   }
   
-  else if ( mode == 9 ){  //天気情報テスト
+  else if ( mode == 9 ){
     
-      get_weatherServerConnection.get_today_weather()
-      .done(function(){
-
-        //reply_message = "今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
-        
-        if( today_temperature_high == ""){
-          console.log("NO temperature");
-          reply_message = "\n\n天気は"+today_weather+ "。だよ";
-        }
-        else if( Number(today_temperature_high) >= 30 ){
-          reply_message = "\n\n今日は暑いね。水分よくとってね。最高気温が"+today_temperature_high+"度になるってよ～。("+today_weather+")";
-        }
-        else if( Number(today_temperature_high) < 15 ){
-          reply_message = "\n\n今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
-        }
-        else{
-          reply_message = "\n\n今日の天気は"+today_weather+"、最高気温は"+today_temperature_high+"度だって。今日も頑張って行きましょう！";
-        }
-        
-        
-        console.log("reply_message = "+reply_message);
-        send_notification(reply_message);
-      });
       
   }
   else{
@@ -394,6 +382,14 @@ app.post('/webhook', function(req, res, next){
             console.log("beacon in/out="+beacon_inout);
           
           
+            if( beacon_inout == "leave")  return;
+          
+            //本来はbeacon_useridが含まれるgroup限定でpush通知すべきであるが、
+            //認証アカウントしかgroup内userid listを取得できない制限有。
+            //今回は暫定で全グループへ配信する（実際のユースケースでは当然ダメ）
+            send_notification_to_all_group();
+          
+  /*        
             var headers = {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + process.env.CHANNEL_ACCESS_TOKEN
@@ -414,6 +410,7 @@ app.post('/webhook', function(req, res, next){
                 body: body,
                 json: true
             });
+  */
         }
       
       // アカウントが友だち追加またはブロック解除された
@@ -464,10 +461,15 @@ app.post('/webhook', function(req, res, next){
                     
             //★DB追加・削除
             if( event.type == 'join' ){
-              insert_id2db( new_follower_id, TYPE_GROUP );
+              insert_id2db( new_group_id, TYPE_GROUP );
+              
+              send_notification( new_group_id, 
+                                "グループに追加ありがとう！お友達がLINE Beaconの範囲に入ったら教えるよ。\n(今は間引きせずBeacon反応したら必ず通知するので回数多いよ。また、今だけお友だちのいる同一グループでは無く全グループに配信するよ。)", 
+                                TYPE_PUSH );
+              
             }
             else if ( event.type == 'leave' ){
-              delete_id2db( new_follower_id );
+              delete_id2db( new_group_id );
             }
             else{
               //don't care.
@@ -536,7 +538,7 @@ module.exports.send_notification_hourly = function(req, res){
 
 
             console.log("reply_message = "+reply_message);
-            send_notification( id_list, reply_message );
+            send_notification( id_list, reply_message, TYPE_MULTICAST );
         });      
         /* ------------ */
           //send_notification( id_list, "はばたき自習室来ない？\n\n" + reply_message);
@@ -579,9 +581,22 @@ module.exports.send_notification_hourly = function(req, res){
 //}
 };    //module.exports おわり
 
-function send_notification( destination, push_message){
+function send_notification( destination, push_message, push_or_multicast ){
   
   console.log("send_notification destination="+destination);
+  
+  var send_url;
+  if( push_or_multicast == TYPE_PUSH ){
+    send_url = LINE_PUSH_URL;
+  }
+  else if( push_or_multicast == TYPE_MULTICAST ){
+    send_url = LINE_PUSH_URL_MULTICAST;
+  }
+  else{
+    console.log("error");
+    return;
+  }
+  
     var headers = {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + process.env.CHANNEL_ACCESS_TOKEN
@@ -599,7 +614,7 @@ function send_notification( destination, push_message){
 
       request({
    //     url: LINE_PUSH_URL,
-        url: LINE_PUSH_URL_MULTICAST,
+        url: send_url,
         method: 'POST',
         headers: headers,
         body: body,
@@ -609,9 +624,44 @@ function send_notification( destination, push_message){
 
 
 
+function send_notification_to_all_group(){
+  
+  select_type = TYPE_GROUP;
+    
+  read_id_from_db( )
+  .done(function(){
+    
+      if( id_list.length == 0){
+        return;
+      }
+      console.log("id_list.length="+id_list.length);
+      var reply_message = 'お友達が自習室にいるよ！誰かは行ってのお楽しみ！！';
+    
+    var destination = id_list;
+    
+    if( destination.length != 0 ){
+      send_notification_delay( destination, reply_message, TYPE_PUSH, 0 );
+    }
+   
 
+    
+  }); 
+}
 
+function send_notification_delay( destination, message, type, count ){
+    console.log("destination["+count+"]="+destination[count]);
+    setTimeout( function(){
+      send_notification( destination[count], message, type );
 
+      count++;
+      if( count < destination.length ){
+        send_notification_delay( destination, message, type, count );
+      }
+      else{
+        console.log("send_notification_delay end.");
+      }
+    }, 2000 );    
+}
 
 
 
@@ -1020,14 +1070,15 @@ function delete_id2db( id ){
 // databaseから読み出す
 // return: 無
 // [入力] sql_textに TYPE_USER or TYPE_GROUPを設定すること
-// [出力] id_list_textバッファへ格納
+// [出力] id_listバッファへ格納
 //////////////////////////////////////////////////////////////////////
 function read_id_from_db( ){
     var table_insert_command;
     var query;
   
     var dfd = new $.Deferred;
-  
+
+    init_id_list();　//初期化
     
 //===================================
 
@@ -1100,18 +1151,7 @@ function read_id_from_db( ){
                   
                   console.log("id="+result.rows[i].id + " type="+result.rows[i].type);
                 }
-              /*
-                id_list_text = "";
-                var i;
-                for(i=0; i<result.rows.length; i++ ){
-                  if(i>0){
-                    id_list_text += ",";
-                  }
-                  id_list_text += result.rows[i].id;
-                  
-                  console.log("id="+result.rows[i].id);
-                }
-              */
+
                 
 
             client.end(function (err){
@@ -1174,6 +1214,15 @@ function read_id_from_db( ){
 }
 
 
+function init_id_list(){
+  if( id_list.length != 0 ){
+    while( id_list.length > 0 ){
+      id_list.pop();
+    }
+  }
+}
+
+
 function check_available_time(){
   
   var now_date = new Date();
@@ -1190,3 +1239,28 @@ function check_available_time(){
   
   
 }
+
+//認証済アカウントしかダメなので本API使えない
+function line_groupid2member( groupid ){
+    
+  var dfd = new $.Deferred;
+
+  var headers = {
+    'Authorization': 'Bearer ' + process.env.CHANNEL_ACCESS_TOKEN
+  }
+
+  request.get({
+    url: "https://api.line.me/v2/bot/group/{groupid}/members/ids",
+    headers: headers
+  }, function( error, response, body){
+    console.log(body);
+  });
+
+  //return dfd.promise();
+  
+
+//};
+  
+  
+} 
+       
