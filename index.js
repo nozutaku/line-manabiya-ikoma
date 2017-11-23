@@ -23,6 +23,7 @@ global.StudyRoomInfo = function( ){
   this.content = "";
   this.link = "";
   this.date;
+  this.place;
 }
 
 global.studyroominfomations = new Array();
@@ -35,6 +36,7 @@ global.PLACE_IKOMA_SESERAGI = 3;   //南コミュニティセンター(せせら
 global.PLACE_IKOMA_SHIKANODAI = 4; //鹿ノ台
 global.PLACE_IKOMA_TAKEMARU = 5;   //たけまる
 global.PLACE_IKOMA_MIRAKU = 6;     //美楽来
+
 
 //global.selectplace = PLACE_IKOMA_TOSHOKAN; //現在の設定値
 global.selectplace = PLACE_IKOMA_TOSHOKAN; //現在の設定値
@@ -57,6 +59,8 @@ var STRING_IKOMA_MIRAKU1 = "美楽来";
 var STRING_IKOMA_MIRAKU2 = "みらく";
 
 var STRING_IKOMA_EKIMAE = "駅前";
+
+var STRING_IKOMA_ALL_STUDYROOM = "全ての自習室";
 
 
 var input_message="";
@@ -188,7 +192,9 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   }
   //自習室情報取得してお薦め。ノーマル文章
   else if (mode == 2){
-    input_message = "はばたき";
+    //input_message = "はばたき";
+    input_message = STRING_IKOMA_ALL_STUDYROOM;
+    push_notification_mode = PUSH_BROADCAST_MODE; 
     
     var to_array = new Array();
 
@@ -235,23 +241,28 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   else if (mode == 3){
     input_message = "はばたき";
 
+    var to_array = new Array();
+    to_array[0] = process.env.USERID;
+    
     make_reply_message()
     .done(function(){
       console.log("reply_message = " + reply_message);
 
-      send_notification("今日は暑いから家より図書館自習室の方がいいと思うよ！\n\n" + reply_message, TYPE_MULTICAST);
+      send_notification(to_array, "今日は暑いから家より図書館自習室の方がいいと思うよ！\n\n" + reply_message, TYPE_MULTICAST);
     });
   }
   
   //受験本番まであと数日！
   else if (mode == 4){
     input_message = "はばたき";
+    var to_array = new Array();
+    to_array[0] = process.env.USERID;
 
     make_reply_message()
     .done(function(){
       console.log("reply_message = " + reply_message);
 
-      send_notification("公立高校受験まであと１３３日！　自習室来ないと。。。\n\n" + reply_message, TYPE_MULTICAST);
+      send_notification(to_array, "公立高校受験まであと１３３日！　自習室来ないと。。。\n\n" + reply_message, TYPE_MULTICAST);
     });
   }
   else if( mode == 5 ){ //DB test
@@ -282,7 +293,9 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
     read_id_from_db( )
     .done(function(){
       if( select_type == TYPE_USER ){
+        
         //send_notification(id_list, "バージョンアップに向けての最終テストちう\n\n", TYPE_MULTICAST);
+
       }
       else if( select_type == TYPE_GROUP ){
         //send_notification(id_list, "自習室来ない？\n\n", TYPE_PUSH);
@@ -491,7 +504,8 @@ app.post('/webhook', function(req, res, next){
 module.exports.send_notification_hourly = function(req, res){
 //function send_notification_hourly(){
   
-  input_message = "はばたき";   //★暫定
+  //input_message = "はばたき";   //★暫定
+  input_message = STRING_IKOMA_ALL_STUDYROOM;
   
   if(!DEBUG){
     if( check_available_time() == 0 ){
@@ -515,7 +529,7 @@ module.exports.send_notification_hourly = function(req, res){
         if( reply_message != ""){
           console.log("reply_message1 = " + reply_message);
           
-             reply_message = "はばたき自習室来ない？\n\n" + reply_message;       
+             reply_message = "自習室来ない？\n\n" + reply_message;       
   /* ------------ */
           get_weatherServerConnection.get_today_weather()
           .done(function(){
@@ -671,6 +685,9 @@ function make_reply_message( ){
   var output="";
   console.log("input="+input);
   
+var TIME_ONE_HOUR = 60 * 60 * 1000;    //1H   
+//  var TIME_ONE_HOUR = 12* 60 * 60 * 1000;    //24H for DEBUG
+  
   //図書館名が入ってたら本日の図書館状況を図書館ブログから返す
   //output = make_lib_studyplace_status_message( input );
 
@@ -680,29 +697,54 @@ function make_reply_message( ){
   
   var lib_num = pickup_lib_name( input );
   
-  if( lib_num > 0 ){
+  if( lib_num >= 0 ){
     selectplace = lib_num;
     
     //図書館ブログ検索
     StydyPlaceServerConnection.get_studyroom_info()
       .done(function(){
       
-      /* ----
-        for(var i=0; i<studyroominfomations.length; i++){
-          console.log("---------------------------");
-          console.log("studyroominfos["+i+"].title="+studyroominfomations[i].title);
-          
-          var display_date = make_display_data_format(studyroominfomations[i].date);
-          
-          output = studyroominfomations[i].title + " " 
-            + display_date + " " 
-            + studyroominfomations[i].content + " "
-            + studyroominfomations[i].link;
-                    
-        }
-        ---- */
       console.log("studyroominfomations.length = "+studyroominfomations.length);
       
+      for(var i=0; i<studyroominfomations.length; i++ ){
+          console.log("studyroominfos[i].title="+studyroominfomations[i].title);
+        
+        //同じデータを何回も配信しないように直近１時間のデータのみをbroadcastする
+        if( push_notification_mode == PUSH_BROADCAST_MODE){
+          
+          var now_date = new Date();
+  //        var now_date = new Date("Wed, 15 Nov 2017 9:00:00 +0900");
+          
+
+          console.log("publish_hour(UTC)="+studyroominfomations[i].date.getUTCHours());
+          console.log("now_hour(UTC)= "+now_date.getUTCHours() );
+           
+          if( now_date.getTime() - studyroominfomations[i].date.getTime() > TIME_ONE_HOUR ){
+
+            if(( i == studyroominfomations.length -1 ) && ( output == "" )){
+              console.log("既に配信されているのでbroadcastしない");
+              console.log("resolve");
+              return dfd.resolve();
+            }
+          }
+          else{
+            console.log("1H以内。配信開始");
+          }
+
+        }
+    
+        if( output != "" )  output += "\n\n";  //２つ目の自習室は改行×２
+        
+        if( selectplace == PLACE_IKOMA_ALL )
+          output += "【" + studyroominfomations[i].place + "】" + "\n";
+        
+        output += studyroominfomations[i].title + " " 
+//          + display_date + " " 
+          + studyroominfomations[i].content + " "
+          + studyroominfomations[i].link;
+        
+      }
+      /* --------------------------------------------
       if( studyroominfomations.length > 0 ){
           console.log("studyroominfos[0].title="+studyroominfomations[0].title);
         
@@ -716,8 +758,8 @@ function make_reply_message( ){
           console.log("publish_hour(UTC)="+studyroominfomations[0].date.getUTCHours());
           console.log("now_hour(UTC)= "+now_date.getUTCHours() );
           
-          var TIME_ONE_HOUR = 60 * 60 * 1000;    //1H   
-    //      var TIME_ONE_HOUR = 12* 60 * 60 * 1000;    //24H for DEBUG 
+    //      var TIME_ONE_HOUR = 60 * 60 * 1000;    //1H   
+          var TIME_ONE_HOUR = 12* 60 * 60 * 1000;    //24H for DEBUG 
           if( now_date.getTime() - studyroominfomations[0].date.getTime() > TIME_ONE_HOUR ){
 
             console.log("既に配信されているのでbroadcastしない");
@@ -731,13 +773,13 @@ function make_reply_message( ){
         }
     
           
- //       var display_date = make_display_data_format(studyroominfomations[0].date);
-          
         output = studyroominfomations[0].title + " " 
 //          + display_date + " " 
           + studyroominfomations[0].content + " "
           + studyroominfomations[0].link;
+        
       }
+      ---------------------------------------- */
       
       if( output == ""){
         if( push_notification_mode != PUSH_BROADCAST_MODE){
@@ -835,8 +877,12 @@ function make_lib_studyplace_status_message( input ){
 function pickup_lib_name( str ){
   var output_lib_num = -1;
   
-  //本館
-  if ( str.indexOf(STRING_IKOMA_TOSHOKAN1) != -1) {
+  //全て
+  if ( str.indexOf(STRING_IKOMA_ALL_STUDYROOM) != -1) {
+    output_lib_num = PLACE_IKOMA_ALL;
+  }
+  //本館 
+  else if ( str.indexOf(STRING_IKOMA_TOSHOKAN1) != -1) {
     output_lib_num = PLACE_IKOMA_TOSHOKAN;
   }
   else if( str.indexOf(STRING_IKOMA_TOSHOKAN2) != -1 ){
@@ -881,6 +927,8 @@ function pickup_lib_name( str ){
   else{
     //don't care
   }
+  
+  //console.log("[pickup_lib_name]output_lib_num="+output_lib_num);
       
   return output_lib_num;
 }

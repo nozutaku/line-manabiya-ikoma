@@ -7,6 +7,7 @@ var $ = require('jquery-deferred');
 
 var yql = require('yql-node').formatAsJSON();
 
+/*
 var URL_IKOMA_ALL = 'select * from yql.query.multi where queries in ('
 		+ '\"select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_takemaru/rss.xml\' and title matches \'.*自習室.*\' limit 1\",'
 		+ '\"select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_shikanodai/rss.xml\' and title matches \'.*自習室.*\' limit 1\",'
@@ -15,6 +16,16 @@ var URL_IKOMA_ALL = 'select * from yql.query.multi where queries in ('
 		+ '\"select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_habataki/rss.xml\' and title matches \'.*自習室.*\' limit 1\",'
 		+ '\"select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_miraku/rss.xml\' and title matches \'.*自習室.*\' limit 1\"'
 		+ ')|sort(field=\'pubDate\',descending=\'true\');';
+*/
+var URL_IKOMA_ALL = 'select * from yql.query.multi where queries in ('
+		+ '\"select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_toshokan/rss.xml\' and title matches \'.*自習室.*\' limit 1\",'
+		+ '\"select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_habataki/rss.xml\' and title matches \'.*自習室.*\' limit 1\",'
+		+ '\"select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_seseragi/rss.xml\' and title matches \'.*自習室.*\' limit 1\",'
+		+ '\"select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_shikanodai/rss.xml\' and title matches \'.*自習室.*\' limit 1\",'
+		+ '\"select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_takemaru/rss.xml\' and title matches \'.*自習室.*\' limit 1\",'
+		+ '\"select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_miraku/rss.xml\' and title matches \'.*自習室.*\' limit 1\"'
+		+ ');';
+
 
 var URL_IKOMA_TOSHOKAN = "select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_toshokan/rss.xml\' and title matches \'.*自習室.*\' limit 2";
 var URL_IKOMA_HABATAKI = "select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_habataki/rss.xml\' and title matches \'.*自習室.*\' limit 2";
@@ -51,8 +62,7 @@ var URL_IKOMA_MIRAKU = "select * from rss where url=\'https://blogs.yahoo.co.jp/
 		+ ');';
   */
   
-
-
+var array_place_name = ["生駒市図書館(本館)", "図書館北分館(はばたき)", "図書館南分館(せせらぎ)", "たけまるホール", "鹿ノ台ふれあいホール図書館", "美楽来"];
 
 
 
@@ -107,14 +117,14 @@ module.exports.get_studyroom_info = function(){
   
   init_studyroominfomations();
   query = make_query_url( selectplace );
-  console.log("query="+query);
+  //console.log("query="+query);
   
   
   yql.execute(query, function(error,response){
     
     //console.log("error="+error);
     
-    //console.log("yql:");
+    console.log("yql:");
     //console.log(response);
       console.log("count=" + response.query.count);
       console.log("created="+response.query.created);
@@ -145,7 +155,7 @@ module.exports.get_studyroom_info = function(){
           var dateStringNow = new Date();
 
           if(DEBUG_NOT_ONLYTODAY){  //DEBUGとして全て登録する
-            set_studyroominfomations( title, link, dateString, description, num );
+            set_studyroominfomations( title, link, dateString, description, num, 0 );
             num++;
           }
           else{
@@ -153,7 +163,7 @@ module.exports.get_studyroom_info = function(){
               //console.log("now date(UTC)="+dateStringNow.getUTCDate());
 
             if( is_today( dateString )){
-              set_studyroominfomations( title, link, dateString, description, num );
+              set_studyroominfomations( title, link, dateString, description, num, 0 );
               num++;
             }
           }
@@ -171,7 +181,14 @@ module.exports.get_studyroom_info = function(){
     //全図書館自習室情報
     else{
       for(var i in response.query.results.results){    //json.query.results.results[0].item.link
-          var entry = response.query.results.results[i].item;   //★★★★ここ未検証★★★★
+          
+        console.log("i="+i);
+        
+          if( response.query.results.results[i] == null ){
+            console.log(i+"番目はnull");
+            continue;
+          }
+          var entry = response.query.results.results[i].item;
 
           var link = entry.link;
           var title = entry.title;
@@ -184,12 +201,15 @@ module.exports.get_studyroom_info = function(){
           var dateStringNow = new Date();
 
           if(DEBUG_NOT_ONLYTODAY){  //DEBUGとして全て登録する
-            set_studyroominfomations( title, link, dateString, description, num );
+            set_studyroominfomations( title, link, dateString, description, num, i );
             num++;
           }
           else{
-            if( day == dateStringNow.getDate() ){   //当日のみセットする
-              set_studyroominfomations( title, link, dateString, description, num );
+              //console.log("publish date(UTC)="+day);
+              //console.log("now date(UTC)="+dateStringNow.getUTCDate());
+
+            if( is_today( dateString )){
+              set_studyroominfomations( title, link, dateString, description, num, i );
               num++;
             }
           }
@@ -198,7 +218,7 @@ module.exports.get_studyroom_info = function(){
           //}
 
         console.log("i=" +i+" title="+ title + " link="+link + " date="+year+"/"+month+"/"+day);
-        console.log("body="+description);
+        //console.log("body="+description);
 
       }
       //全図書館自習室情報(ここまで)
@@ -215,13 +235,14 @@ module.exports.get_studyroom_info = function(){
 
 
 
-function set_studyroominfomations( title, link, dateString, description, num ){
+function set_studyroominfomations( title, link, dateString, description, num, place_num ){
   info = new StudyRoomInfo();
           
   info.title = title;
   info.link = link;
   info.date = dateString;
   //info.content = description;
+  info.place = place_num2name( place_num );
   studyroominfomations[num] = info;
           
   console.log("num="+num);
@@ -236,6 +257,15 @@ function init_studyroominfomations(){
     }
   }
 }
+
+function place_num2name( num ){
+  var place_name = array_place_name[num];
+  console.log("num="+num + "name="+place_name);
+  return place_name;
+}
+
+
+
 
 function make_query_url( selectplace ){
   var url;
