@@ -726,6 +726,7 @@ var TIME_ONE_HOUR = 60 * 60 * 1000;    //1H
               console.log("resolve");
               return dfd.resolve();
             }
+            continue;   //TIME_ONE_HOUR以上ならばfor文を回す
           }
           else{
             console.log("1H以内。配信開始");
