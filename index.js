@@ -18,6 +18,7 @@ var pg = require('pg');
 
 var StydyPlaceServerConnection = require('./get_studyplace_info.js');
 var get_weatherServerConnection = require('./get_weather.js');
+var static_data = require('./static_data.js');
 
 global.PushMessage = function( ){
   this.type;
@@ -126,6 +127,13 @@ var PUSH_BROADCAST_MODE = 1;    //push_notification_modeに設定する値
 var PUSH_REPLY_MODE = 2;        //push_notification_modeに設定する値
 global.push_notification_mode = PUSH_REPLY_MODE;
 
+
+var TYPE_LINE_STAMP_MOTIVATION = 1;
+var TYPE_LINE_STAMP_FRIENDS = 2;
+
+
+
+
 // listen on port
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
@@ -169,7 +177,42 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   //なんでもTEST
   if (mode == 1) {
 
-  /* ------------- */
+    
+    console.log("stamp len="+motivation_stamp.length);
+    
+    //var tmp = Math.floor( Math.random() * 100 );
+/*
+    var random_num = ( Math.floor( Math.random() * 100 )) % motivation_stamp.length;
+
+    console.log("random_num="+random_num);
+    
+    info4 = new PushMessage();
+    info4.type = 'sticker';
+    info4.packageId = motivation_stamp[random_num][0];
+    info4.stickerId = motivation_stamp[random_num][1];
+    
+    console.log("packageId="+info4.packageId + " stickerId="+info4.stickerId);
+*/
+    //pushmessage[2] = info3; 
+    
+    var random_num;
+    for(var i=0; i<5; i++){
+      
+/*
+      random_num = ( Math.floor( Math.random() * 100 )) % motivation_stamp.length;
+      console.log("random_num="+random_num);
+      
+      info = new PushMessage();
+      info.type = 'sticker';
+      info.packageId = motivation_stamp[random_num][0];
+      info.stickerId = motivation_stamp[random_num][1];
+      console.log("packageId="+info.packageId + " stickerId="+info.stickerId);
+*/
+      pushmessage[i] = choose_line_stamp( TYPE_LINE_STAMP_MOTIVATION ); 
+      
+    }
+    
+  /* -------------
 
   info = new PushMessage();
   info.type = 'text';
@@ -192,7 +235,7 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
 
   pushmessage[2] = info3; 
     
-  /* ------------- */
+  ------------- */
     
     //input_message = "はばたき";
     input_message = STRING_IKOMA_ALL_STUDYROOM;
@@ -421,28 +464,6 @@ app.post('/webhook', function(req, res, next){
             //今回は暫定で全グループへ配信する（実際のユースケースでは当然ダメ）
             send_notification_to_all_group();
           
-  /*        
-            var headers = {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + process.env.CHANNEL_ACCESS_TOKEN
-            }
-            var body = {
-                to: process.env.USERID, 
-//                to: process.env.MYTEST_GROUP_ID, 
-                messages: [{
-                    type: 'text',
-                    //text: 'henoheno'
-                    text: 'お友達が自習室にいるよ！誰かは行ってのお楽しみ！！'
-                }]
-            }
-            request({
-                url: LINE_PUSH_URL,
-                method: 'POST',
-                headers: headers,
-                body: body,
-                json: true
-            });
-  */
         }
       
       // アカウントが友だち追加またはブロック解除された
@@ -590,10 +611,14 @@ module.exports.send_notification_hourly = function(req, res){
             info2.type = 'text';
             info2.text = reply_message2;
             
+            info3 = choose_line_stamp( TYPE_LINE_STAMP_MOTIVATION );
+
+            /*
             info3 = new PushMessage();
             info3.type = 'sticker';
             info3.packageId = '1';
             info3.stickerId = '114';    //頑張ろうスタンプ
+            */
             
             init_pushmessage();
             pushmessage[0] = info2;
@@ -676,11 +701,13 @@ function send_notification_to_all_group(){
       info1 = new PushMessage();
       info1.type = 'text';
       info1.text = 'お友達が自習室にいるよ！誰かは行ってのお楽しみ！！';
-    
+/*    
       info2 = new PushMessage();
       info2.type = 'sticker';
       info2.packageId = '1';
       info2.stickerId = '106';
+*/
+      info2 = choose_line_stamp( TYPE_LINE_STAMP_FRIENDS );
     
       init_pushmessage();
       pushmessage[0] = info1;
@@ -1381,4 +1408,33 @@ function line_groupid2member( groupid ){
   
   
 } 
+
+function choose_line_stamp( type ){
+  var random_num;
+  info = new PushMessage();
+  info.type = 'sticker';
+  
+  if( type == TYPE_LINE_STAMP_MOTIVATION ){
+    random_num = ( Math.floor( Math.random() * 100 )) % motivation_stamp.length;
+    info.packageId = motivation_stamp[random_num][0];
+    info.stickerId = motivation_stamp[random_num][1];
+  }
+  else if( type == TYPE_LINE_STAMP_FRIENDS ){
+    random_num = ( Math.floor( Math.random() * 100 )) % friends_stamp.length;
+    info.packageId = friends_stamp[random_num][0];
+    info.stickerId = friends_stamp[random_num][1];
+  }
+  else{
+    console.log("ERROR: choose_line_stamp");
+    info.packageId = '1';
+    info.stickerId = '114';
+  }
+  
+  
+  console.log("[choose_line_stamp] type="+type + " random_num="+random_num);  
+  console.log("[choose_line_stamp] packageId="+info.packageId + " stickerId="+info.stickerId);
+  
+  return info;
+}
+
        
