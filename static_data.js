@@ -93,3 +93,23 @@ global.merry_christmas_stamp = [
 global.April_stamp = [   //受験合格おめでとうにも使える
   ['4','604']  
 ];
+
+//絵文字　天気
+global.EMOJI_SUNNY =  0x1000A9;
+global.EMOJI_RAIN =   0x1000AA;
+global.EMOJI_SNOW =   0x1000AC;
+global.EMOJI_CLOUDY = 0x1000AC;
+
+//絵文字 感情
+global.EMOJI_SMILE1 = 0x100079;
+global.EMOJI_SMILE2 = 0x10008D;
+global.EMOJI_SMILE3 = 0x10007F;
+global.EMOJI_SMILE4 = 0x100080;
+global.EMOJI_SMILE5 = 0x10008A;
+global.EMOJI_SMILE6 = 0x100004;
+global.EMOJI_SMILE7 = 0x10000D;
+
+global.EMOJI_peace = 0x100030;
+
+
+

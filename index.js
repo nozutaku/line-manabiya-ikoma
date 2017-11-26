@@ -177,65 +177,34 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   //なんでもTEST
   if (mode == 1) {
 
-    
-    console.log("stamp len="+motivation_stamp.length);
-    
-    //var tmp = Math.floor( Math.random() * 100 );
-/*
-    var random_num = ( Math.floor( Math.random() * 100 )) % motivation_stamp.length;
-
-    console.log("random_num="+random_num);
-    
-    info4 = new PushMessage();
-    info4.type = 'sticker';
-    info4.packageId = motivation_stamp[random_num][0];
-    info4.stickerId = motivation_stamp[random_num][1];
-    
-    console.log("packageId="+info4.packageId + " stickerId="+info4.stickerId);
-*/
-    //pushmessage[2] = info3; 
-    
+/*    
     var random_num;
     for(var i=0; i<5; i++){
-      
-/*
-      random_num = ( Math.floor( Math.random() * 100 )) % motivation_stamp.length;
-      console.log("random_num="+random_num);
-      
-      info = new PushMessage();
-      info.type = 'sticker';
-      info.packageId = motivation_stamp[random_num][0];
-      info.stickerId = motivation_stamp[random_num][1];
-      console.log("packageId="+info.packageId + " stickerId="+info.stickerId);
-*/
       pushmessage[i] = choose_line_stamp( TYPE_LINE_STAMP_MOTIVATION ); 
-      
     }
-    
-  /* -------------
+*/    
+
+  
+  /* ------------- */
 
   info = new PushMessage();
   info.type = 'text';
-  info.text = "テスト１";
+  //info.text = "テスト１";
+  info.text = set_weather_sentence( "晴れ時々曇り", "14" );
 
   init_pushmessage();
   pushmessage[0] = info;
     
   info2 = new PushMessage();
   info2.type = 'text';
-  info2.text = "テスト２";
-
+  info2.text = set_weather_sentence( "雨", "16" );
   pushmessage[1] = info2;   
 
- 
-  info3 = new PushMessage();
-  info3.type = 'sticker';
-  info3.packageId = '1';
-  info3.stickerId = '1';
 
-  pushmessage[2] = info3; 
+
+  pushmessage[2] = choose_line_stamp( TYPE_LINE_STAMP_MOTIVATION ); 
     
-  ------------- */
+  /* ------------- */
     
     //input_message = "はばたき";
     input_message = STRING_IKOMA_ALL_STUDYROOM;
@@ -575,36 +544,24 @@ module.exports.send_notification_hourly = function(req, res){
           info1 = new PushMessage();
           info1.type = 'text';
           info1.text = reply_message;
-          init_pushmessage();
-          //pushmessage[0] = info1;
+
+          if( check_early_morning() == 0 ){   //朝一では無いので自習室情報のみ配信
+            init_pushmessage();
+            pushmessage[0] = info1;
+            
+            send_notification( id_list, pushmessage, TYPE_MULTICAST );
+            console.log("\n----- send_notification_hourly done! ------\n");
+            return;
+          }
           
-          var reply_message2;     
-  /* ------------ */
+          var reply_message2;
+          
+          //天気は朝一番のみ
           get_weatherServerConnection.get_today_weather()
           .done(function(){
 
             reply_message2 = set_weather_sentence( today_weather, today_temperature_high );
             
-
-/*
-            reply_message2 = "今日のいこまの天気を教えるね。\n";
-            
-            if( today_temperature_high == ""){
-              console.log("NO temperature");
-              reply_message2 += "天気は"+today_weather+ "。だよ";
-            }
-            else if( Number(today_temperature_high) >= 30 ){
-              reply_message2 += "今日は"+ today_weather + "。最高気温は" + today_temperature_high + "度予想。今日は暑いね。水分よくとってね。";
-              //reply_message2 += "今日は暑いね。水分よくとってね。最高気温が"+today_temperature_high+"度になるってよ～。("+today_weather+")";
-            }
-            else if( Number(today_temperature_high) < 15 ){
-              reply_message2 += "今日は"+ today_weather + "。気温は" + today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。";
-              //reply_message2 += "今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
-            }
-            else{
-              reply_message2 += "今日は"+today_weather+"。最高気温は"+today_temperature_high+"度だって。今日も頑張って行きましょう！";
-            }
-*/
             console.log("reply_message2 = "+reply_message2);
             
             info2 = new PushMessage();
@@ -612,13 +569,6 @@ module.exports.send_notification_hourly = function(req, res){
             info2.text = reply_message2;
             
             info3 = choose_line_stamp( TYPE_LINE_STAMP_MOTIVATION );
-
-            /*
-            info3 = new PushMessage();
-            info3.type = 'sticker';
-            info3.packageId = '1';
-            info3.stickerId = '114';    //頑張ろうスタンプ
-            */
             
             init_pushmessage();
             pushmessage[0] = info2;
@@ -628,8 +578,7 @@ module.exports.send_notification_hourly = function(req, res){
 
             send_notification( id_list, pushmessage, TYPE_MULTICAST );
         });      
-        /* ------------ */
-          //send_notification( id_list, "はばたき自習室来ない？\n\n" + reply_message);
+
         }
         console.log("\n----- send_notification_hourly done! ------\n");
   });
@@ -1345,7 +1294,12 @@ function set_weather_sentence( today_weather, today_temperature_high ){
   
   var reply_message2;
   
-  reply_message2 = "今日のいこまの天気を教えるね。\n";
+  //絵文字対応必要
+  //　https://qiita.com/hisaharu/items/613baad81a4161c3c6c2
+  //  https://qiita.com/Repomn/items/b991f20e4fecd0577d4b
+  
+  //reply_message2 = "今日のいこまの天気" + EMOJI_peace + "\n";
+  reply_message2 = "今日のいこまの天気\n";
   
   if( today_temperature_high == ""){
     console.log("NO temperature");
@@ -1374,15 +1328,27 @@ function check_available_time(){
   var now_hour = now_date.getUTCHours();   //getHours()だとherokuはUTCだがwindowsPCではlocaltime(JST)なのでUTCで取得で統一
   
   if(( now_hour >= 0 ) && ( now_hour <= 8 )){   //JST 9時～17時
-    console.log("now_hour(UTC) = "+ now_hour + "available_time");
+    console.log("now_hour(UTC) = "+ now_hour + " available_time");
     return 1;
   }
   else{
-    console.log("now_hour(UTC) = "+ now_hour + "NOT available_time");
+    console.log("now_hour(UTC) = "+ now_hour + " NOT available_time");
     return 0;
   }
+}
+
+function check_early_morning(){
+  var now_date = new Date();
+  var now_hour = now_date.getUTCHours();   //getHours()だとherokuはUTCだがwindowsPCではlocaltime(JST)なのでUTCで取得で統一
   
-  
+  if(( now_hour >= 0) && ( now_hour < 1)){    //JST 9時～10時
+    console.log("now_hour(UTC) = "+ now_hour + " early_morning");
+    return 1;
+  }
+  else{
+    console.log("now_hour(UTC) = "+ now_hour + " NOT early_morning");
+    return 0;    
+  }
 }
 
 //認証済アカウントしかダメなので本API使えない
