@@ -131,6 +131,7 @@ global.push_notification_mode = PUSH_REPLY_MODE;
 var TYPE_LINE_STAMP_MOTIVATION = 1;
 var TYPE_LINE_STAMP_FRIENDS = 2;
 
+var TYPE_LINE_EMOJI_SMILE = 1;
 
 
 
@@ -184,20 +185,44 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
     }
 */    
 
-  
+    //var aaa = "0x0A";
+    var aaa = "0x1000A9";
+    
+  var ret = parseInt(aaa, 16);
+    console.log("ret="+ret);
+    
+  //var EMOJI = &#10007B;
+    var EMOJI_1 = "\u3042";
+
+    //var EMOJI_3 = String.fromCodePoint(0x1000A9);
+    var EMOJI_3 = String.fromCodePoint(EMOJI_SMILE1) 
+    + String.fromCodePoint(EMOJI_SMILE2) 
+    + String.fromCodePoint(EMOJI_SMILE3)
+    + String.fromCodePoint(EMOJI_SUNNY)
+    + String.fromCodePoint(EMOJI_peace);
+    
+  // https://qiita.com/YusukeHirao/items/2f0fb8d5bbb981101be0  
   /* ------------- */
 
+
+    
+    
   info = new PushMessage();
   info.type = 'text';
-  //info.text = "テスト１";
-  info.text = set_weather_sentence( "晴れ時々曇り", "14" );
+  //info.text = "テスト１"+EMOJI_1+EMOJI_3;
+  info.text = "おはよう" 
+              + String.fromCodePoint(choose_emoji(TYPE_LINE_EMOJI_SMILE)) + "\n"
+              + set_weather_sentence( "晴れ時々雪", "31" );
+//              + set_weather_sentence( "晴れ時々曇り", "14" );
 
   init_pushmessage();
   pushmessage[0] = info;
     
   info2 = new PushMessage();
   info2.type = 'text';
-  info2.text = set_weather_sentence( "雨", "16" );
+  info2.text = "おはよう" 
+              + String.fromCodePoint(choose_emoji(TYPE_LINE_EMOJI_SMILE)) + "\n"
+              + set_weather_sentence( "くもり", "16" );
   pushmessage[1] = info2;   
 
 
@@ -372,6 +397,7 @@ app.post('/webhook', function(req, res, next){
           console.log("====================\n");
           
           input_message = event.message.text;
+          push_notification_mode = PUSH_REPLY_MODE;
   
           make_reply_message()
           .done(function(){
@@ -560,7 +586,9 @@ module.exports.send_notification_hourly = function(req, res){
           get_weatherServerConnection.get_today_weather()
           .done(function(){
 
-            reply_message2 = set_weather_sentence( today_weather, today_temperature_high );
+            reply_message2 = "おはよう" 
+              + String.fromCodePoint(choose_emoji(TYPE_LINE_EMOJI_SMILE)) + "\n"
+              + set_weather_sentence( today_weather, today_temperature_high );
             
             console.log("reply_message2 = "+reply_message2);
             
@@ -649,7 +677,7 @@ function send_notification_to_all_group(){
     
       info1 = new PushMessage();
       info1.type = 'text';
-      info1.text = 'お友達が自習室にいるよ！誰かは行ってのお楽しみ！！';
+      info1.text = 'お友達が自習室にいるよ！誰かは行ってのお楽しみ'+String.fromCodePoint(choose_emoji(TYPE_LINE_EMOJI_SMILE));
 /*    
       info2 = new PushMessage();
       info2.type = 'sticker';
@@ -802,7 +830,7 @@ function make_reply_message( ){
       
       if( output == ""){
         if( push_notification_mode != PUSH_BROADCAST_MODE){
-          output = "今日は自習室やってないかも～";
+          output = "今は自習室やってないかも～" + String.fromCodePoint(EMOJI_SORRY);
         }
         else{
           console.log("本日は自習室開館してないので敢えてbroadcast配信しない");
@@ -821,11 +849,18 @@ function make_reply_message( ){
   }
   else{ //図書館名無
     if( output == ""){
-      reply_message = "ごめんわからないよ～\n生駒の図書館名も入れてね\n 「図書会館」とか「はばたき」「せせらぎ」とかだよ";   //スタンプに後ほど変更★★
+      reply_message = "ごめんわからないよ～" 
+        + String.fromCodePoint(EMOJI_SORRY)
+        + "\n生駒の図書館名も入れてね\n 「図書会館」とか「はばたき」「せせらぎ」とかだよ"
+        + String.fromCodePoint(choose_emoji(TYPE_LINE_EMOJI_SMILE));
+      
+      
       
       get_weatherServerConnection.get_today_weather()
       .done(function(){
         
+        reply_message += "\n\nついでに\n" + set_weather_sentence( today_weather, today_temperature_high );
+/*        
         if( today_temperature_high == ""){
           console.log("NO temperature");
         }
@@ -838,7 +873,7 @@ function make_reply_message( ){
         else{
           reply_message += "\n\nなお、今日の天気は"+today_weather+"、最高気温は"+today_temperature_high+"度だって。今日も頑張って行きましょう！";
         }
-        
+*/        
         
         console.log("reply_message = "+reply_message);
         console.log("resolve");
@@ -1294,27 +1329,33 @@ function set_weather_sentence( today_weather, today_temperature_high ){
   
   var reply_message2;
   
-  //絵文字対応必要
-  //　https://qiita.com/hisaharu/items/613baad81a4161c3c6c2
-  //  https://qiita.com/Repomn/items/b991f20e4fecd0577d4b
+  //絵文字対応記述例
+  //　String.fromCodePoint(EMOJI_SMILE2)
   
   //reply_message2 = "今日のいこまの天気" + EMOJI_peace + "\n";
-  reply_message2 = "今日のいこまの天気\n";
+  reply_message2 = "＜今日の生駒の天気＞\n";
   
   if( today_temperature_high == ""){
     console.log("NO temperature");
-    reply_message2 += "天気は"+today_weather+ "。だよ";
+    reply_message2 += "天気は"+today_weather 
+      + String.fromCodePoint(get_weather_emoji(today_weather));
   }
   else if( Number(today_temperature_high) >= 30 ){
-    reply_message2 += "今日は"+ today_weather + "。最高気温は" + today_temperature_high + "度予想。今日は暑いね。水分よくとってね。";
+    reply_message2 += "今日は"+ today_weather + String.fromCodePoint(get_weather_emoji(today_weather)) 
+      + " 最高気温は" + today_temperature_high + "度予想。今日は暑いね。水分よくとってね"
+      +String.fromCodePoint(choose_emoji(TYPE_LINE_EMOJI_SMILE));
     //reply_message2 += "今日は暑いね。水分よくとってね。最高気温が"+today_temperature_high+"度になるってよ～。("+today_weather+")";
   }
   else if( Number(today_temperature_high) < 15 ){
-    reply_message2 += "今日は"+ today_weather + "。気温は" + today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。";
+    reply_message2 += "今日は"+ today_weather + String.fromCodePoint(get_weather_emoji(today_weather)) 
+      + " 気温は" + today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね"
+      +String.fromCodePoint(choose_emoji(TYPE_LINE_EMOJI_SMILE));
     //reply_message2 += "今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
   }
   else{
-    reply_message2 += "今日は"+today_weather+"。最高気温は"+today_temperature_high+"度だって。今日も頑張って行きましょう！";
+    reply_message2 += "今日は"+today_weather+String.fromCodePoint(get_weather_emoji(today_weather))
+      +" 最高気温は"+today_temperature_high+"度だって。今日も頑張って行きましょう"
+      +String.fromCodePoint(choose_emoji(TYPE_LINE_EMOJI_SMILE));
   }
   
   return reply_message2;
@@ -1403,4 +1444,52 @@ function choose_line_stamp( type ){
   return info;
 }
 
+function choose_emoji( type ){
+  var emoji_code;
+  var random_num;
+  
+  if( type == TYPE_LINE_EMOJI_SMILE ){
+    random_num = ( Math.floor( Math.random() * 100 )) % smile_emoji.length;
+    emoji_code = smile_emoji[random_num];
+  }
+  else{
+    console.log("ERROR: choose_emoji");
+    emoji_code = EMOJI_SMILE1;
+  }
+  
+  console.log("emoji_code="+emoji_code);
+  return( emoji_code );
+  
+}
+
+function get_weather_emoji( weather_string ){
+  var emoji_code;
+  
+  var WEATHER_SUNNY = "晴れ";
+  var WEATHER_CLOUDY = "くもり";
+  var WEATHER_RAIN = "雨";
+  var WEATHER_SNOW = "雪";
+  
+  
+  if( weather_string.indexOf(WEATHER_SNOW) != -1) {
+    emoji_code = EMOJI_SNOW;
+  }
+  else if( weather_string.indexOf(WEATHER_RAIN) != -1) {
+    emoji_code = EMOJI_RAIN;
+  }
+  else if ( weather_string.indexOf(WEATHER_SUNNY) != -1) {
+    emoji_code = EMOJI_SUNNY;
+  }
+  else if( weather_string === WEATHER_CLOUDY ){   //完全一致
+    emoji_code = EMOJI_CLOUDY;
+  }
+  else{
+    emoji_code = EMOJI_SMILE6;    //中途半端な天気なので顔文字でごまかす
+  }
+  
+  console.log("[get_weather_emoji]"+weather_string + "="+ emoji_code);
+
+  return( emoji_code );
+  
+}
        

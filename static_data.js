@@ -1,6 +1,9 @@
 
-// [REF] https://developers.line.me/media/messaging-api/sticker_list.pdf
 
+/* ------------------------------------------------------------
+   LINE STAMP
+   https://developers.line.me/media/messaging-api/sticker_list.pdf
+   ------------------------------------------------------------ */
 global.motivation_stamp = [
   ['1','2'],
   ['1','12'],
@@ -94,10 +97,14 @@ global.April_stamp = [   //受験合格おめでとうにも使える
   ['4','604']  
 ];
 
-//絵文字　天気
+/* ------------------------------------------------------------
+   LINE 絵文字
+   https://developers.line.me/media/messaging-api/emoji-list.pdf
+   ------------------------------------------------------------ */
+
 global.EMOJI_SUNNY =  0x1000A9;
 global.EMOJI_RAIN =   0x1000AA;
-global.EMOJI_SNOW =   0x1000AC;
+global.EMOJI_SNOW =   0x1000AB;
 global.EMOJI_CLOUDY = 0x1000AC;
 
 //絵文字 感情
@@ -111,5 +118,15 @@ global.EMOJI_SMILE7 = 0x10000D;
 
 global.EMOJI_peace = 0x100030;
 
+global.EMOJI_SORRY = 0x100017;
 
+global.smile_emoji = [
+  EMOJI_SMILE1,
+  EMOJI_SMILE2,
+  EMOJI_SMILE3,
+  EMOJI_SMILE4,
+  EMOJI_SMILE5,
+  EMOJI_SMILE6,
+  EMOJI_SMILE7
+];
 
