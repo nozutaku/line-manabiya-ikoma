@@ -29,6 +29,7 @@ module.exports.get_today_weather = function(){
   today_weather = "";
   today_temperature_high = 0;
   today_temperature_low = 0;
+  today_rain_precipitation = 0;
   
   
   var options = {
@@ -58,6 +59,7 @@ module.exports.get_today_weather = function(){
       console.log("title="+data.title);
       console.log("area="+data.area[0].areaName );
       console.log("weather="+data.area[0].weather[0]);
+      console.log("precipitation="+data.area[0].precipitation[0]);              //降水確率
       console.log("stationCode="+data.temperatureStation[0].stationCode);
       console.log("temperature[0]="+data.temperatureStation[0].temperature[0]); //今日の日中の最高気温(9時～18時)
       console.log("temperature[1]="+data.temperatureStation[0].temperature[1]); //今日の最高気温(１日中)
@@ -73,6 +75,7 @@ module.exports.get_today_weather = function(){
 	    } else {
         
         today_weather = data.area[0].weather[0];
+        today_rain_precipitation = data.area[0].precipitation[0];
         today_temperature_high = data.temperatureStation[0].temperature[1];   //最高気温
         //today_temperature_low = data.temperatureStation[0].temperature[2];    //明日の朝の最低気温のため設定しない
         
