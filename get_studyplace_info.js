@@ -1,6 +1,8 @@
 /* 自習室情報取得 */
 
+var DEBUG_ISTODAY_24H = 0;    //1=デバッグ用24時間データ全登録　0=リリース用
 var DEBUG_NOT_ONLYTODAY = 0;  //1=全て登録　0=当日のみ(正式版)
+
 
 var $ = require('jquery-deferred');
 //var $ = require('jquery');
@@ -309,8 +311,15 @@ function make_query_url( selectplace ){
 }
 
 function is_today( target_dateObj ){
+
+  var var TIME_THRESHOLD;
+  if( DEBUG_ISTODAY_24H ){
+    TIME_THRESHOLD = 24 * 60 * 60 * 1000;    //12H  
+  }
+  else{ //リリース時はこちら
+    TIME_THRESHOLD = 12 * 60 * 60 * 1000;    //12H
+  }
   
-  var TIME_THRESHOLD = 12 * 60 * 60 * 1000;    //12H
   var dateObjNow = new Date();
   //var dateObjNow = new Date("Wed, 15 Nov 2017 09:00:00 +0900"); 
 

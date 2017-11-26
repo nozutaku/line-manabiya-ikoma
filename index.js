@@ -5,8 +5,9 @@
     heroku config:set USERID=xxxx
 */
 
-var DEBUG = 0;          //1=DEBUG 0=RELEASE
-var LOCAL_DEBUG = 0;    //1=Local node.js利用   0=herokuサーバー利用(default)     
+var DEBUG = 0;          //1=DEBUG 0=RELEASE   (特定時間以外broadcastしない機能もここ)
+var LOCAL_DEBUG = 0;    //1=Local node.js利用   0=herokuサーバー利用(default)  
+var DEBUG_ISTODAY_24H = 0;  //1=デバッグ用24時間データ全登録　0=リリース用
 
 var express = require('express');
 var bodyParser = require('body-parser');
@@ -18,6 +19,15 @@ var pg = require('pg');
 var StydyPlaceServerConnection = require('./get_studyplace_info.js');
 var get_weatherServerConnection = require('./get_weather.js');
 
+global.PushMessage = function( ){
+  this.type;
+  this.text = "";
+  this.packageId;
+  this.stickerId;
+}
+global.pushmessage = new Array();
+
+
 global.StudyRoomInfo = function( ){
   this.title = "";
   this.content = "";
@@ -25,7 +35,6 @@ global.StudyRoomInfo = function( ){
   this.date;
   this.place;
 }
-
 global.studyroominfomations = new Array();
 
 
@@ -123,6 +132,14 @@ app.listen(port, () => {
   console.log(`listening on ${port}`);
 });
 
+function init_pushmessage(){
+  if( pushmessage.length != 0 ){
+    while( pushmessage.length > 0 ){
+      pushmessage.pop();
+    }
+  }
+}
+
 
 /*
 app.post('/', function(req, res, next){
@@ -140,38 +157,6 @@ app.use(bodyParser.json());
 app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.com/?mode=★    [local] http://localhost:3000/?mode=★ で検証！
   
   
-  /* ------------------ test start ------------------
-  //StydyPlaceServerConnection.test(studyroominfos)
-  StydyPlaceServerConnection.test()
-  .done(function(){
-    console.log("finish");
-    console.log("studyroominfos[0].title="+studyroominfomations[0].title);
-    console.log("studyroominfos[1].title="+studyroominfomations[1].title);
-    //console.log("studyroominfos[0].title="+studyroominfos[0].title);
-  });
-  
-  ------------------ test end ------------------ */
-  
-  //send_notification();
-
-  /* ========= DEBUG ここから ================
-  input_message = "はばたき";
-  
-  make_reply_message()
-  .done(function(){
-    console.log("reply_message = " + reply_message);
-  });
-    ========================================= */
-
-  
-  /* DEBUG
-  StydyPlaceServerConnection.get_studyroom_info()
-  .done(function(){
-    for(var i=0; i<studyroominfomations.length; i++){
-      console.log("studyroominfos["+i+"].title="+studyroominfomations[i].title);
-    }
-  });
-  */
   
   /* =============== PUSH通知DEBUG用(ここから) ================ */
   console.log("start get");
@@ -184,10 +169,46 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   //なんでもTEST
   if (mode == 1) {
 
-    send_notification_to_all_group();
+  /* ------------- */
+
+  info = new PushMessage();
+  info.type = 'text';
+  info.text = "テスト１";
+
+  init_pushmessage();
+  pushmessage[0] = info;
     
-    //console.log("check_available_time()="+check_available_time());
-    //send_notification_hourly();
+  info2 = new PushMessage();
+  info2.type = 'text';
+  info2.text = "テスト２";
+
+  pushmessage[1] = info2;   
+
+ 
+  info3 = new PushMessage();
+  info3.type = 'sticker';
+  info3.packageId = '1';
+  info3.stickerId = '1';
+
+  pushmessage[2] = info3; 
+    
+  /* ------------- */
+    
+    //input_message = "はばたき";
+    input_message = STRING_IKOMA_ALL_STUDYROOM;
+    push_notification_mode = PUSH_BROADCAST_MODE; 
+    
+    var to_array = new Array();
+
+    to_array[0] = process.env.USERID;
+    //to_array[1] = 'xxx';
+    
+    
+    send_notification( to_array, pushmessage, TYPE_MULTICAST );
+    
+    
+    //send_notification_to_all_group();
+    
  
   }
   //自習室情報取得してお薦め。ノーマル文章
@@ -205,31 +226,45 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
     .done(function(){
       console.log("reply_message1 = " + reply_message);
       
+      info1 = new PushMessage();
+      info1.type = 'text';
+      info1.text = reply_message;
+      //pushmessage[0] = info1;
+      
   /* ------------ */
   get_weatherServerConnection.get_today_weather()
   .done(function(){
 
 
     
-    reply_message += "\n\nついでに今日のいこまの天気を教えるね。\n";
+    var reply_message2 = "今日のいこまの天気を教えるね。\n";
 
     if( today_temperature_high == ""){
       console.log("NO temperature");
-      reply_message += "天気は"+today_weather+ "。だよ";
+      reply_message2 += "天気は"+today_weather+ "。だよ";
     }
     else if( Number(today_temperature_high) >= 30 ){
-      reply_message += "今日は暑いね。水分よくとってね。最高気温が"+today_temperature_high+"度になるってよ～。("+today_weather+")";
+      reply_message2 += "今日は暑いね。水分よくとってね。最高気温が"+today_temperature_high+"度になるってよ～。("+today_weather+")";
     }
     else if( Number(today_temperature_high) < 15 ){
-      reply_message += "今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
+      reply_message2 += "今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
     }
     else{
-      reply_message += "今日の天気は"+today_weather+"、最高気温は"+today_temperature_high+"度だって。今日も頑張って行きましょう！";
+      reply_message2 += "今日の天気は"+today_weather+"、最高気温は"+today_temperature_high+"度だって。今日も頑張って行きましょう！";
     }
 
 
-    console.log("reply_message = "+reply_message);
-    send_notification( to_array, reply_message, TYPE_MULTICAST );
+    console.log("reply_message = "+reply_message2);
+    info2 = new PushMessage();
+    info2.type = 'text';
+    info2.text = reply_message2;
+    
+    init_pushmessage();
+    pushmessage[0] = info2;
+    pushmessage[1] = info1;
+    
+    send_notification( to_array, pushmessage, TYPE_MULTICAST );
+//    send_notification( to_array, reply_message, TYPE_MULTICAST );    
   });      
   /* ------------ */
 
@@ -239,31 +274,12 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   
   //天気予報＋自習室情報
   else if (mode == 3){
-    input_message = "はばたき";
 
-    var to_array = new Array();
-    to_array[0] = process.env.USERID;
-    
-    make_reply_message()
-    .done(function(){
-      console.log("reply_message = " + reply_message);
-
-      send_notification(to_array, "今日は暑いから家より図書館自習室の方がいいと思うよ！\n\n" + reply_message, TYPE_MULTICAST);
-    });
   }
   
   //受験本番まであと数日！
   else if (mode == 4){
-    input_message = "はばたき";
-    var to_array = new Array();
-    to_array[0] = process.env.USERID;
 
-    make_reply_message()
-    .done(function(){
-      console.log("reply_message = " + reply_message);
-
-      send_notification(to_array, "公立高校受験まであと１３３日！　自習室来ないと。。。\n\n" + reply_message, TYPE_MULTICAST);
-    });
   }
   else if( mode == 5 ){ //DB test
     
@@ -349,17 +365,20 @@ app.post('/webhook', function(req, res, next){
           .done(function(){
             console.log("reply_message = " + reply_message);
             
+            info1 = new PushMessage();
+            info1.type = 'text';
+            info1.text = reply_message;
+            init_pushmessage();
+            pushmessage[0] = info1;
+            
+            
             var headers = {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + process.env.CHANNEL_ACCESS_TOKEN
             }
             var body = {
                 replyToken: event.replyToken,
-                messages: [{
-                    type: 'text',
-                    text: reply_message
-                    //text: event.message.text    //おうむ返し
-                }]
+                messages: pushmessage
             }
 
             request({
@@ -476,9 +495,13 @@ app.post('/webhook', function(req, res, next){
             if( event.type == 'join' ){
               insert_id2db( new_group_id, TYPE_GROUP );
               
-              send_notification( new_group_id, 
-                                "グループに追加ありがとう！お友達がLINE Beaconの範囲に入ったら教えるよ。\n(今は間引きせずBeacon反応したら必ず通知するので回数多いよ。また、今だけお友だちのいる同一グループでは無く全グループに配信するよ。)", 
-                                TYPE_PUSH );
+              info1 = new PushMessage();
+              info1.type = 'text';
+              info1.text = "グループに追加ありがとう！お友達がLINE Beaconの範囲に入ったら教えるよ。\n(今は間引きせずBeacon反応したら必ず通知するので回数多いよ。また、今だけお友だちのいる同一グループでは無く全グループに配信するよ。)";
+              init_pushmessage();
+              pushmessage[0] = info1;
+              
+              send_notification( new_group_id, pushmessage, TYPE_PUSH );
               
             }
             else if ( event.type == 'leave' ){
@@ -504,7 +527,6 @@ app.post('/webhook', function(req, res, next){
 module.exports.send_notification_hourly = function(req, res){
 //function send_notification_hourly(){
   
-  //input_message = "はばたき";   //★暫定
   input_message = STRING_IKOMA_ALL_STUDYROOM;
   
   if(!DEBUG){
@@ -529,30 +551,57 @@ module.exports.send_notification_hourly = function(req, res){
         if( reply_message != ""){
           console.log("reply_message1 = " + reply_message);
           
-             reply_message = "自習室来ない？\n\n" + reply_message;       
+          info1 = new PushMessage();
+          info1.type = 'text';
+          info1.text = reply_message;
+          init_pushmessage();
+          //pushmessage[0] = info1;
+          
+          var reply_message2;     
   /* ------------ */
           get_weatherServerConnection.get_today_weather()
           .done(function(){
 
-            reply_message += "\n\nついでに今日のいこまの天気を教えるね。\n";
+            reply_message2 = set_weather_sentence( today_weather, today_temperature_high );
+            
 
+/*
+            reply_message2 = "今日のいこまの天気を教えるね。\n";
+            
             if( today_temperature_high == ""){
               console.log("NO temperature");
-              reply_message += "天気は"+today_weather+ "。だよ";
+              reply_message2 += "天気は"+today_weather+ "。だよ";
             }
             else if( Number(today_temperature_high) >= 30 ){
-              reply_message += "今日は暑いね。水分よくとってね。最高気温が"+today_temperature_high+"度になるってよ～。("+today_weather+")";
+              reply_message2 += "今日は"+ today_weather + "。最高気温は" + today_temperature_high + "度予想。今日は暑いね。水分よくとってね。";
+              //reply_message2 += "今日は暑いね。水分よくとってね。最高気温が"+today_temperature_high+"度になるってよ～。("+today_weather+")";
             }
             else if( Number(today_temperature_high) < 15 ){
-              reply_message += "今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
+              reply_message2 += "今日は"+ today_weather + "。気温は" + today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。";
+              //reply_message2 += "今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
             }
             else{
-              reply_message += "今日の天気は"+today_weather+"、最高気温は"+today_temperature_high+"度だって。今日も頑張って行きましょう！";
+              reply_message2 += "今日は"+today_weather+"。最高気温は"+today_temperature_high+"度だって。今日も頑張って行きましょう！";
             }
+*/
+            console.log("reply_message2 = "+reply_message2);
+            
+            info2 = new PushMessage();
+            info2.type = 'text';
+            info2.text = reply_message2;
+            
+            info3 = new PushMessage();
+            info3.type = 'sticker';
+            info3.packageId = '1';
+            info3.stickerId = '114';    //頑張ろうスタンプ
+            
+            init_pushmessage();
+            pushmessage[0] = info2;
+            pushmessage[1] = info1;
+            pushmessage[2] = info3;
+            
 
-
-            console.log("reply_message = "+reply_message);
-            send_notification( id_list, reply_message, TYPE_MULTICAST );
+            send_notification( id_list, pushmessage, TYPE_MULTICAST );
         });      
         /* ------------ */
           //send_notification( id_list, "はばたき自習室来ない？\n\n" + reply_message);
@@ -564,32 +613,7 @@ module.exports.send_notification_hourly = function(req, res){
   });
   
 
-        
-  /*
-  get_weatherServerConnection.get_today_weather()
-  .done(function(){
 
-    //reply_message = "今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
-
-    if( today_temperature_high == ""){
-      console.log("NO temperature");
-      reply_message = "\n\n天気は"+today_weather+ "。だよ";
-    }
-    else if( Number(today_temperature_high) >= 30 ){
-      reply_message = "\n\n今日は暑いね。水分よくとってね。最高気温が"+today_temperature_high+"度になるってよ～。("+today_weather+")";
-    }
-    else if( Number(today_temperature_high) < 15 ){
-      reply_message = "\n\n今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
-    }
-    else{
-      reply_message = "\n\n今日の天気は"+today_weather+"、最高気温は"+today_temperature_high+"度だって。今日も頑張って行きましょう！";
-    }
-
-
-    console.log("reply_message = "+reply_message);
-    send_notification(reply_message);
-  });
-  */
   
   
 //}
@@ -619,11 +643,11 @@ function send_notification( destination, push_message, push_or_multicast ){
 //        replyToken: event.replyToken,
           to: destination,
 //        to: process.env.USERID, 
-        messages: [{
-          type: 'text',
-          text: push_message
-        //text: event.message.text    //おうむ返し
-        }]
+        messages: push_message      
+//        messages: [{
+//          type: 'text',
+//          text: push_message
+//        }]
     }
 
       request({
@@ -637,7 +661,6 @@ function send_notification( destination, push_message, push_or_multicast ){
 }
 
 
-
 function send_notification_to_all_group(){
   
   select_type = TYPE_GROUP;
@@ -649,12 +672,25 @@ function send_notification_to_all_group(){
         return;
       }
       console.log("id_list.length="+id_list.length);
-      var reply_message = 'お友達が自習室にいるよ！誰かは行ってのお楽しみ！！';
+    
+      info1 = new PushMessage();
+      info1.type = 'text';
+      info1.text = 'お友達が自習室にいるよ！誰かは行ってのお楽しみ！！';
+    
+      info2 = new PushMessage();
+      info2.type = 'sticker';
+      info2.packageId = '1';
+      info2.stickerId = '106';
+    
+      init_pushmessage();
+      pushmessage[0] = info1;
+      pushmessage[1] = info2;
+
     
     var destination = id_list;
     
     if( destination.length != 0 ){
-      send_notification_delay( destination, reply_message, TYPE_PUSH, 0 );
+      send_notification_delay( destination, pushmessage, TYPE_PUSH, 0 );
     }
    
 
@@ -685,8 +721,13 @@ function make_reply_message( ){
   var output="";
   console.log("input="+input);
   
-var TIME_ONE_HOUR = 60 * 60 * 1000;    //1H   
-//  var TIME_ONE_HOUR = 12* 60 * 60 * 1000;    //24H for DEBUG
+  var TIME_ONE_HOUR;
+  if( DEBUG_ISTODAY_24H ){
+    TIME_ONE_HOUR = 24* 60 * 60 * 1000;    //24H for DEBUG
+  }
+  else{
+    TIME_ONE_HOUR = 60 * 60 * 1000;    //1H   
+  }
   
   //図書館名が入ってたら本日の図書館状況を図書館ブログから返す
   //output = make_lib_studyplace_status_message( input );
@@ -727,6 +768,7 @@ var TIME_ONE_HOUR = 60 * 60 * 1000;    //1H
               return dfd.resolve();
             }
             continue;   //TIME_ONE_HOUR以上ならばfor文を回す
+            
           }
           else{
             console.log("1H以内。配信開始");
@@ -1270,6 +1312,33 @@ function init_id_list(){
     }
   }
 }
+
+
+function set_weather_sentence( today_weather, today_temperature_high ){
+  
+  var reply_message2;
+  
+  reply_message2 = "今日のいこまの天気を教えるね。\n";
+  
+  if( today_temperature_high == ""){
+    console.log("NO temperature");
+    reply_message2 += "天気は"+today_weather+ "。だよ";
+  }
+  else if( Number(today_temperature_high) >= 30 ){
+    reply_message2 += "今日は"+ today_weather + "。最高気温は" + today_temperature_high + "度予想。今日は暑いね。水分よくとってね。";
+    //reply_message2 += "今日は暑いね。水分よくとってね。最高気温が"+today_temperature_high+"度になるってよ～。("+today_weather+")";
+  }
+  else if( Number(today_temperature_high) < 15 ){
+    reply_message2 += "今日は"+ today_weather + "。気温は" + today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。";
+    //reply_message2 += "今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
+  }
+  else{
+    reply_message2 += "今日は"+today_weather+"。最高気温は"+today_temperature_high+"度だって。今日も頑張って行きましょう！";
+  }
+  
+  return reply_message2;
+}
+
 
 
 function check_available_time(){
