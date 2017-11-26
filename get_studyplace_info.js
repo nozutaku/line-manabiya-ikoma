@@ -312,7 +312,7 @@ function make_query_url( selectplace ){
 
 function is_today( target_dateObj ){
 
-  var var TIME_THRESHOLD;
+  var TIME_THRESHOLD;
   if( DEBUG_ISTODAY_24H ){
     TIME_THRESHOLD = 24 * 60 * 60 * 1000;    //12H  
   }
