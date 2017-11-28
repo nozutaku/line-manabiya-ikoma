@@ -19,6 +19,8 @@ var pg = require('pg');
 var StydyPlaceServerConnection = require('./get_studyplace_info.js');
 var get_weatherServerConnection = require('./get_weather.js');
 var static_data = require('./static_data.js');
+var bot_words = require('./bot_words.js');
+
 
 global.PushMessage = function( ){
   this.type;
@@ -134,6 +136,19 @@ var TYPE_LINE_STAMP_FRIENDS = 2;
 
 var TYPE_LINE_EMOJI_SMILE = 1;
 
+/*
+//入試残日程情報
+global.ExamInfo = function( ){
+  this.exam_name = "";
+  this.exam_remain_day;
+}
+global.examinfo = new Array();
+*/
+
+
+
+
+
 
 
 // listen on port
@@ -242,7 +257,7 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
     //to_array[1] = 'xxx';
     
     
-    send_notification( to_array, pushmessage, TYPE_MULTICAST );
+//    send_notification( to_array, pushmessage, TYPE_MULTICAST );
     
     
     //send_notification_to_all_group();
@@ -720,7 +735,15 @@ function make_reply_message( ){
     TIME_ONE_HOUR = 24* 60 * 60 * 1000;    //24H for DEBUG
   }
   else{
-    TIME_ONE_HOUR = 60 * 60 * 1000;    //1H   
+    TIME_ONE_HOUR = 60 * 60 * 1000;     //1H
+    TIME_ONE_MINUTE = 60 * 1000;        //1minute
+    
+    var now_date_for_correction = new Date();
+    var now_minute = now_date_for_correction.getUTCMinutes();
+    if( now_minute < 60 )
+      TIME_ONE_HOUR += now_minute * TIME_ONE_MINUTE;    //heroku schedulerのばらつきにより１時間規定を少しだけ補正する
+      console.log("minute correction="+now_minute);
+    
   }
   
   //図書館名が入ってたら本日の図書館状況を図書館ブログから返す
@@ -748,7 +771,7 @@ function make_reply_message( ){
         if( push_notification_mode == PUSH_BROADCAST_MODE){
           
           var now_date = new Date();
-  //        var now_date = new Date("Wed, 15 Nov 2017 9:00:00 +0900");
+  //        var now_date = new Date("Tue, 28 Nov 2017 15:23:00 +0900");
           
 
           console.log("publish_hour(UTC)="+studyroominfomations[i].date.getUTCHours());
