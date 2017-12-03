@@ -144,11 +144,14 @@ global.ExamInfo = function( ){
 }
 global.examinfo = new Array();
 
+//bot_words.get_bot_reply_words受け渡し用
+global.bot_reply_words_input;     //bot_words.get_bot_reply_words()との受け渡し用(input)
+global.bot_reply_words_output;    //bot_words.get_bot_reply_words()との受け渡し用(output)
 
 
 
 
-
+/* ========================================================================= */
 
 // listen on port
 const port = process.env.PORT || 3000;
@@ -193,19 +196,12 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   //なんでもTEST
   if (mode == 1) {
 
+    bot_reply_words_input = "作った人";
+    bot_words.get_bot_reply_words();
+    console.log("get_bot_reply_words="+bot_reply_words_output);
+    
 //    send_notification_hourly_internal();
     
-/*    
-    bot_words.get_examination_day();
-    
-    for(var j=0; j < examinfo.length ; j++){
-      console.log("examinfo["+j+"]="+examinfo[j].exam_name+" "+examinfo[j].exam_remain_day);
-    }
-*/    
-
-
-
-
     
     
   info = new PushMessage();
@@ -972,6 +968,17 @@ function make_reply_message( ){
       */
       
       else{
+        //その他、多数の単純返答文章
+        bot_reply_words_input = input;
+        bot_words.get_bot_reply_words();
+        if( bot_reply_words_output != ""){
+          reply_message = bot_reply_words_output;
+          console.log("reply_message = "+reply_message);
+          console.log("resolve");
+          return dfd.resolve();
+        }
+        
+        
         //入試
         reply_message = judge_examination_words( input );
         if( reply_message != ""){

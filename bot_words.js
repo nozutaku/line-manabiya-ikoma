@@ -36,7 +36,42 @@ var exam_table = [
   [ "大学公立後期", UNIVERSITY_ENTRANCE_2nd_EXAM_DAY ]
 ];
 
+var THIS_APP_DESCRIPTION = "生駒の受験生を応援するアプリだよ。"
+                          + String.fromCodePoint(EMOJI_SMILE1)+ "\n"
+                          + "生駒の自習室情報を毎日配信するよ（図書館空いてる日のみ。図書館職員さんの書くブログを配信）。"
+                          + "\nまた、お友だちと一緒に自習室で学べるようにお友だちが図書館に来たことを通知する機能もあり。"
+                          + "\nその他、隠しコマンドもあるので探してみてね。"
+                          + "\n\nさぁ、みんなでいこまの学び舎へGO"
+                          + String.fromCodePoint(EMOJI_GU);
+/* =============================================================== */
+/*   その他、単純返却ワード                                            */
+/* =============================================================== */
+var bot_reply_table = [
+  ["ヘルプ",         THIS_APP_DESCRIPTION],
+  ["help",          THIS_APP_DESCRIPTION],
+  ["このアプリ",     THIS_APP_DESCRIPTION],
+  ["開発",           "CODE for IKOMA\nhttps://www.code4ikoma.org"],
+  ["オープンソース",  "CODE for IKOMAのgithubへ公開予定。coming soon!"],
+  ["利用規約",       "個人情報としては登録した人のUserIDを取得します。その他喋りかけた内容も参照します。"],
+  ["ライセンス",      "@2018 CODE for IKOMA. CC-BY3.0"],
+  ["謝辞",           "生駒市図書館ブログ記載のみなさま、生駒市情報政策課の木×３さん、LINEの立花さん。\n\nThanks!"],
+  ["自習室の場所",    "http://lib.city.ikoma.lg.jp/toshow/info.html"],
+  ["市長",           "こむちゃん"],
+  ["作った人",        "ななみのパパ"]
+  
+];
 
+
+
+
+
+
+
+/* ------------------------------------------------ */
+/* 現時点から入試までの日数計算                          */
+/* 入試のテーブルはexam_table                          */
+/* 出力: examinfo (index.jsにglobalとして宣言)         */
+/* ------------------------------------------------ */
 module.exports.get_examination_day = function(){
 
   var DAY = 24 * 60 * 60 * 1000;
@@ -72,3 +107,30 @@ function init_exam_info(){
 }
 
 
+
+
+/* ------------------------------------------------ */
+/* BOT受け答え。上記bot_reply_tableから返す             */
+/* 入力: bot_reply_words_input                       */
+/* 出力: bot_reply_words_output                      */
+/* ------------------------------------------------ */
+module.exports.get_bot_reply_words = function(){
+  
+  var i;
+  
+  if( bot_reply_words_input == ""){
+    console.log("[get_bot_reply_words] input is invalid.")
+    bot_reply_words_output = "";
+    return;
+  }
+  for(i=0; i<bot_reply_table.length; i++ ){
+    if ( bot_reply_words_input.indexOf(bot_reply_table[i][0]) != -1) {
+      bot_reply_words_output = bot_reply_table[i][1];
+      console.log("hit! No="+i+" input="+bot_reply_words_input+" output="+bot_reply_words_output);
+      return;
+    }
+  }
+  
+  bot_reply_words_output = "";  //ヒット無
+  return;
+};

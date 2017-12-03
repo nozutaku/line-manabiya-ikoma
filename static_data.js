@@ -120,6 +120,9 @@ global.EMOJI_peace = 0x100030;
 
 global.EMOJI_SORRY = 0x100017;
 
+global.EMOJI_GU = 0x100032;
+
+
 global.smile_emoji = [
   EMOJI_SMILE1,
   EMOJI_SMILE2,
