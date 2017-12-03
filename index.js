@@ -136,14 +136,13 @@ var TYPE_LINE_STAMP_FRIENDS = 2;
 
 var TYPE_LINE_EMOJI_SMILE = 1;
 
-/*
+
 //入試残日程情報
 global.ExamInfo = function( ){
   this.exam_name = "";
   this.exam_remain_day;
 }
 global.examinfo = new Array();
-*/
 
 
 
@@ -194,31 +193,17 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   //なんでもTEST
   if (mode == 1) {
 
+//    send_notification_hourly_internal();
+    
 /*    
-    var random_num;
-    for(var i=0; i<5; i++){
-      pushmessage[i] = choose_line_stamp( TYPE_LINE_STAMP_MOTIVATION ); 
+    bot_words.get_examination_day();
+    
+    for(var j=0; j < examinfo.length ; j++){
+      console.log("examinfo["+j+"]="+examinfo[j].exam_name+" "+examinfo[j].exam_remain_day);
     }
 */    
 
-    //var aaa = "0x0A";
-    var aaa = "0x1000A9";
-    
-  var ret = parseInt(aaa, 16);
-    console.log("ret="+ret);
-    
-  //var EMOJI = &#10007B;
-    var EMOJI_1 = "\u3042";
 
-    //var EMOJI_3 = String.fromCodePoint(0x1000A9);
-    var EMOJI_3 = String.fromCodePoint(EMOJI_SMILE1) 
-    + String.fromCodePoint(EMOJI_SMILE2) 
-    + String.fromCodePoint(EMOJI_SMILE3)
-    + String.fromCodePoint(EMOJI_SUNNY)
-    + String.fromCodePoint(EMOJI_peace);
-    
-  // https://qiita.com/YusukeHirao/items/2f0fb8d5bbb981101be0  
-  /* ------------- */
 
 
     
@@ -266,8 +251,13 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   }
   //自習室情報取得してお薦め。ノーマル文章
   else if (mode == 2){
+
+    input_message = "テスト";
+
+    
     //input_message = "はばたき";
-    input_message = STRING_IKOMA_ALL_STUDYROOM;
+    //input_message = STRING_IKOMA_ALL_STUDYROOM;
+
     push_notification_mode = PUSH_BROADCAST_MODE; 
     
     var to_array = new Array();
@@ -546,8 +536,11 @@ app.post('/webhook', function(req, res, next){
 });
 
 module.exports.send_notification_hourly = function(req, res){
-//function send_notification_hourly(){
+
   
+  send_notification_hourly_internal();
+
+/*  
   input_message = STRING_IKOMA_ALL_STUDYROOM;
   
   if(!DEBUG){
@@ -601,15 +594,31 @@ module.exports.send_notification_hourly = function(req, res){
             info2.type = 'text';
             info2.text = reply_message2;
             
+            //LINEスタンプ
             info3 = choose_line_stamp( TYPE_LINE_STAMP_MOTIVATION );
             
             init_pushmessage();
             pushmessage[0] = info2;
             pushmessage[1] = info1;
-            pushmessage[2] = info3;
             
+            
+            //受験までの日がキリの良い日の場合はお知らせ
+            var exam_info_string = judge_examination_remainday();
+            if( exam_info_string != "" ){
+              
+              info4 = new PushMessage();
+              info4.type = 'text';
+              info4.text = exam_info_string;              
+              pushmessage[2] = info4;
+              pushmessage[3] = info3;
 
+            }
+            else{
+              pushmessage[2] = info3;
+            }
+            
             send_notification( id_list, pushmessage, TYPE_MULTICAST );
+            
         });      
 
         }
@@ -618,13 +627,98 @@ module.exports.send_notification_hourly = function(req, res){
     
     
   });
-  
+*/  
 
-
-  
-  
-//}
 };    //module.exports おわり
+
+function send_notification_hourly_internal(){
+  input_message = STRING_IKOMA_ALL_STUDYROOM;
+  
+  if(!DEBUG){
+    if( check_available_time() == 0 ){
+      process.exit(); // heroku schedulerから呼ばれた際、プロセスを終了させるため
+      return;   //自習室時間外には通知しない
+    }
+  }
+  
+  select_type = TYPE_USER;  //read_id_from_db()への入力
+  
+  read_id_from_db( )
+  .done(function(){
+    console.log("ID_LIST="+ id_list);
+    if( id_list.length == 0){
+      return;
+    }
+    
+      make_reply_message()
+      .done(function(){
+        
+        if( reply_message != ""){
+          console.log("reply_message1 = " + reply_message);
+          
+          info1 = new PushMessage();
+          info1.type = 'text';
+          info1.text = reply_message;
+
+          if( check_early_morning() == 0 ){   //朝一では無いので自習室情報のみ配信
+            init_pushmessage();
+            pushmessage[0] = info1;
+            
+            send_notification( id_list, pushmessage, TYPE_MULTICAST );
+            console.log("\n----- send_notification_hourly done! ------\n");
+            return;
+          }
+          
+          var reply_message2;
+          
+          //天気は朝一番のみ
+          get_weatherServerConnection.get_today_weather()
+          .done(function(){
+
+            reply_message2 = "おはよう" 
+              + String.fromCodePoint(choose_emoji(TYPE_LINE_EMOJI_SMILE)) + "\n"
+              + set_weather_sentence( today_weather, today_temperature_high, today_rain_precipitation );
+            
+            console.log("reply_message2 = "+reply_message2);
+            
+            info2 = new PushMessage();
+            info2.type = 'text';
+            info2.text = reply_message2;
+            
+            //LINEスタンプ
+            info3 = choose_line_stamp( TYPE_LINE_STAMP_MOTIVATION );
+            
+            init_pushmessage();
+            pushmessage[0] = info2;
+            pushmessage[1] = info1;
+            
+            
+            //受験までの日がキリの良い日の場合はお知らせ
+            var exam_info_string = judge_examination_remainday();
+            if( exam_info_string != "" ){
+              
+              info4 = new PushMessage();
+              info4.type = 'text';
+              info4.text = exam_info_string;              
+              pushmessage[2] = info4;
+              pushmessage[3] = info3;
+
+            }
+            else{
+              pushmessage[2] = info3;
+            }
+            
+            send_notification( id_list, pushmessage, TYPE_MULTICAST );
+            
+        });      
+
+        }
+        console.log("\n----- send_notification_hourly done! ------\n");
+    });
+  });
+}
+
+
 
 function send_notification( destination, push_message, push_or_multicast ){
   
@@ -651,10 +745,6 @@ function send_notification( destination, push_message, push_or_multicast ){
           to: destination,
 //        to: process.env.USERID, 
         messages: push_message      
-//        messages: [{
-//          type: 'text',
-//          text: push_message
-//        }]
     }
 
       request({
@@ -862,36 +952,52 @@ function make_reply_message( ){
   }
   else{ //図書館名無
     if( output == ""){
-      reply_message = "ごめんわからないよ～" 
+      
+      //天気
+      if( input.indexOf("天気") != -1 ) {
+        console.log("天気check");
+        get_weatherServerConnection.get_today_weather()
+        .done(function(){
+          reply_message += set_weather_sentence( today_weather, today_temperature_high, today_rain_precipitation );
+          console.log("reply_message = "+reply_message);
+          console.log("resolve");
+          return dfd.resolve();
+        });
+      }
+      
+      /* ここに追加
+      else if(aaa){
+        
+      }
+      */
+      
+      else{
+        //入試
+        reply_message = judge_examination_words( input );
+        if( reply_message != ""){
+          console.log("reply_message = "+reply_message);
+          console.log("resolve");
+          return dfd.resolve();
+        }
+        
+        //何も無し
+        reply_message = "ごめんわからないよ～" 
         + String.fromCodePoint(EMOJI_SORRY)
         + "\n生駒の図書館名も入れてね\n 「図書会館」とか「はばたき」「せせらぎ」とかだよ"
         + String.fromCodePoint(choose_emoji(TYPE_LINE_EMOJI_SMILE));
       
-      
-      
-      get_weatherServerConnection.get_today_weather()
-      .done(function(){
+        get_weatherServerConnection.get_today_weather()
+        .done(function(){
+
+          reply_message += "\n\nついでに\n" + set_weather_sentence( today_weather, today_temperature_high, today_rain_precipitation );
+
+
+          console.log("reply_message = "+reply_message);
+          console.log("resolve");
+          return dfd.resolve();
+        });
         
-        reply_message += "\n\nついでに\n" + set_weather_sentence( today_weather, today_temperature_high, today_rain_precipitation );
-/*        
-        if( today_temperature_high == ""){
-          console.log("NO temperature");
-        }
-        else if( Number(today_temperature_high) >= 30 ){
-          reply_message += "\n\nところで、今日は暑いね。水分よくとってね。最高気温が"+today_temperature_high+"度になるってよ～。("+today_weather+")";
-        }
-        else if( Number(today_temperature_high) < 15 ){
-          reply_message += "\n\nところで、今日は寒い１日になるってよ。気温が" +today_temperature_high + "度までしかあがらないんだって。しっかり加湿して風邪ひかないでね。今日の天気は"+today_weather+"。";
-        }
-        else{
-          reply_message += "\n\nなお、今日の天気は"+today_weather+"、最高気温は"+today_temperature_high+"度だって。今日も頑張って行きましょう！";
-        }
-*/        
-        
-        console.log("reply_message = "+reply_message);
-        console.log("resolve");
-        return dfd.resolve();
-      });
+      }
       
       console.log("promise");
       return dfd.promise();
@@ -1000,6 +1106,59 @@ function pickup_lib_name( str ){
   return output_lib_num;
 }
 
+
+function judge_examination_words( input ){
+  var output ="";
+  var i;
+  
+  bot_words.get_examination_day();
+  
+  if(( input == "入試" ) || ( input == "テスト" )){
+    if( input == "テスト" ){
+      output = "入試試験のことかな？";
+    }
+    output += "入試情報をお伝えするよ\n\n";
+    
+    for(i=0; i < examinfo.length ; i++){
+      console.log("examinfo["+i+"]="+examinfo[i].exam_name+" "+examinfo[i].exam_remain_day);
+
+      output += examinfo[i].exam_name + "入試まであと" + examinfo[i].exam_remain_day + "日！\n";
+    }
+    output += "\n頑張って行きましょう！";
+  }
+  else{
+    for(i=0; i < examinfo.length ; i++){
+      console.log("examinfo["+i+"]="+examinfo[i].exam_name+" "+examinfo[i].exam_remain_day);
+
+      if( input.indexOf(examinfo[i].exam_name) != -1 ){
+        output = examinfo[i].exam_name + "入試本番まであと" + examinfo[i].exam_remain_day + "日！";
+        return(output);
+      }
+    }
+  }
+  return( output );  
+}
+
+function judge_examination_remainday(){
+  
+  var EXAMINFO_NOTIFY_INTERVAL = 10;    //残10日毎に通知
+  var return_sentence="";
+  var i;
+  
+  bot_words.get_examination_day();
+  
+  for(i=0; i< examinfo.length ; i++){
+    if( (examinfo[i].exam_remain_day) % EXAMINFO_NOTIFY_INTERVAL == 0 ){
+      return_sentence += examinfo[i].exam_name + "入試本番まであと" +examinfo[i].exam_remain_day + "日！";
+    }
+  }
+  
+  if( return_sentence != ""){
+    console.log("入試情報PUSH通知文言＝\n"+return_sentence);
+  }
+  
+  return( return_sentence );
+}
 
 //使わない関数
 function make_display_data_format( date ){
