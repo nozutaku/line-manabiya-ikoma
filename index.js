@@ -195,13 +195,6 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   
   //なんでもTEST
   if (mode == 1) {
-
-    bot_reply_words_input = "作った人";
-    bot_words.get_bot_reply_words();
-    console.log("get_bot_reply_words="+bot_reply_words_output);
-    
-//    send_notification_hourly_internal();
-    
     
     
   info = new PushMessage();
@@ -417,6 +410,10 @@ app.post('/webhook', function(req, res, next){
                 body: body,
                 json: true
             });
+            
+            if( event.source.type == "user" ){
+              record_log_data( event.message.text, event.source.userId );
+            }
             
           });
           
@@ -1673,6 +1670,47 @@ function get_weather_emoji( weather_string ){
   //console.log("[get_weather_emoji]"+weather_string + "="+ emoji_code);
 
   return( emoji_code );
+  
+}
+
+
+/* ------------------------------------------------------------
+   ユーザー入力ワードを記録。サービス向上のため(有用なワードは返答返すように仕様追加予定)
+   本サービス開始時はコメントアウト想定.
+   
+   heroku configへ下記各自セット必要
+    heroku config:set KINTONE_URL=xxxx
+    heroku config:set CYBOZU_API_TOKEN=xxxx
+  ------------------------------------------------------------- */
+function record_log_data( input_string, userid ){
+  
+  var options = {
+    uri: process.env.KINTONE_URL,
+    headers: {
+      "X-Cybozu-API-Token": process.env.CYBOZU_API_TOKEN,
+      "Content-type": "application/json"
+    },
+  json: {
+    "app": 20,
+    "record": {
+      "input_string": {
+        "value": input_string
+      },
+		  "UserID": {
+			  "value": userid
+		  }
+    }
+  }
+};
+
+request.post(options, function(error, response, body){
+  if (!error && response.statusCode == 200) {
+    console.log("[send_log_data]success!");
+  } else {
+    console.log('[send_log_data]http error: '+ response.statusCode);
+    console.log("input="+input_string+"userid="+userid);
+  }
+});
   
 }
        

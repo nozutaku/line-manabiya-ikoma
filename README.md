@@ -32,6 +32,9 @@ $ heroku config:set DATABASE_NAME=xxxx
 $ heroku config:set USER_NAME=xxxx
 $ heroku config:set PASSWORD=xxxx
 
+$ heroku config:set KINTONE_URL=xxxx
+$ heroku config:set CYBOZU_API_TOKEN=xxxx
+
 ```
 ```
 heroku postgres DB構造
