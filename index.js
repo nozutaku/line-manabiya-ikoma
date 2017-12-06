@@ -377,8 +377,13 @@ app.post('/webhook', function(req, res, next){
         if (event.type == 'message'){          
           console.log("====================\n");
           console.log("LINE message event come now.")
-          console.log(event);
+          //console.log(event);
           console.log("====================\n");
+          
+          if( event.source.type != "user" ){
+            console.log("NOT from user. so no reply");
+            return;
+          }
           
           input_message = event.message.text;
           push_notification_mode = PUSH_REPLY_MODE;
