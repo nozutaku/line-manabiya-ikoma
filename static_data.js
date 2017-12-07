@@ -115,6 +115,7 @@ global.EMOJI_SMILE4 = 0x100080;
 global.EMOJI_SMILE5 = 0x10008A;
 global.EMOJI_SMILE6 = 0x100004;
 global.EMOJI_SMILE7 = 0x10000D;
+global.EMOJI_NIYARI = 0x10008C;
 
 global.EMOJI_peace = 0x100030;
 

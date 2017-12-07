@@ -2,17 +2,6 @@
    BOTが返す各種言葉
    ------------------------------------------------------ */
 
-//get_examination_day();
-
-
-/* 入試残日程情報   inde.jsに定義
-var ExamInfo = function( ){
-  this.exam_name = "";
-  this.exam_remain_day;
-}
-examinfo = new Array();
-*/
-
 
 var HIGHSCHOOL_ENTRANCE_EXAM_DAY = "Mon, 12 Mar 2018 23:59:59 +0900";   //2018年公立高校入試日（一般選抜）
 var PRIVATE_HIGHSCHOOL_OSAKA_ENTRANCE_EXAM_DAY = "Sat 10 Feb 2018 23:59:59 +0900";  //大阪私立高校の多く(2/10)
@@ -49,6 +38,7 @@ var THIS_APP_DESCRIPTION = "生駒の受験生を応援するアプリだよ。"
 var bot_reply_table = [
   ["ヘルプ",         THIS_APP_DESCRIPTION],
   ["help",          THIS_APP_DESCRIPTION],
+  ["このアプリのURL",   "https://line.me/R/ti/p/-jDawLFDAz"],
   ["このアプリ",     THIS_APP_DESCRIPTION],
   ["開発",           "CODE for IKOMA\nhttps://www.code4ikoma.org"],
   ["オープンソース",  "CODE for IKOMAのgithubへ公開予定。coming soon!"],
@@ -60,8 +50,6 @@ var bot_reply_table = [
   ["作った人",        "ななみのパパ"]
   
 ];
-
-
 
 
 
@@ -134,3 +122,21 @@ module.exports.get_bot_reply_words = function(){
   bot_reply_words_output = "";  //ヒット無
   return;
 };
+
+/* ------------------------------------------------ */
+/* 現在BOT受け答えが対応している数を返す                  */
+/* 入力: なし                                         */
+/* 出力: bot_reply_words_output                      */
+/* ------------------------------------------------ */
+module.exports.get_bot_reply_words_number = function(){
+  
+  bot_reply_table.length;
+  
+  var num = bot_reply_table.length + exam_table.length + 3; //+3は「天気」と「テスト」と「bot数」
+  var about_num = Math.round( num / 10 ) * 10;
+
+  bot_reply_words_output = String(about_num);
+  return;
+  
+};
+

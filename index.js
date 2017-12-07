@@ -197,6 +197,8 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   if (mode == 1) {
     
     
+    //bot_words.get_bot_reply_words_number();
+    
   info = new PushMessage();
   info.type = 'text';
   //info.text = "テスト１"+EMOJI_1+EMOJI_3;
@@ -241,7 +243,7 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   //自習室情報取得してお薦め。ノーマル文章
   else if (mode == 2){
 
-    input_message = "テスト";
+    input_message = "返答数";
 
     
     //input_message = "はばたき";
@@ -468,6 +470,7 @@ app.post('/webhook', function(req, res, next){
             var new_follower_id = event.source.userId;
             console.log("new_member="+new_follower_id);
             
+            
             //★DB追加・削除
             if( event.type == 'follow' ){
               insert_id2db( new_follower_id, TYPE_USER );
@@ -478,6 +481,82 @@ app.post('/webhook', function(req, res, next){
             else{
               //don't care.
             }
+            
+            //welcome メッセージを送る
+            if( event.type == 'follow' ){
+              
+              //greeting message
+              info1 = new PushMessage();
+              info1.type = 'text';
+              info1.text = "いらっしゃいっ！"
+                          +String.fromCodePoint( EMOJI_SMILE2 )
+                          +"\n生駒市民のみなさん。\n\n"
+                          +"毎日、生駒市図書館自習室情報を送るよ。一緒に学ぼう！\n"
+                          +"例えばこんなのを送るよ";
+              
+              
+              //bot返答数
+              info3 = new PushMessage();
+              info3.type = 'text';
+              bot_reply_words_output = "";
+              bot_words.get_bot_reply_words_number();
+              if( bot_reply_words_output != ""){
+                info3.text = "また、しゃべりかけてくれると約"+bot_reply_words_output+"個返答するよ。何個見つけれるかなぁ～？"
+                            +String.fromCodePoint( EMOJI_NIYARI );
+              }
+              else{
+                info3.text = "また、しゃべりかけてくれるといろいろお返事できるよ。話しかけてみてね";
+              }
+              
+              
+              //スタンプ
+              info4 = new PushMessage();
+              info4.type = 'sticker';
+              info4.packageId = "1";
+              info4.stickerId = "114";  //ガッツポーズのスタンプ
+    
+              
+              //sample用自習室情報
+              input_message = STRING_IKOMA_ALL_STUDYROOM;
+              push_notification_mode = PUSH_REPLY_MODE;
+
+              make_reply_message()
+              .done(function(){
+                console.log("reply_message = " + reply_message);
+
+                info2 = new PushMessage();
+                info2.type = 'text';
+                info2.text = reply_message;
+                
+                
+                init_pushmessage();
+                pushmessage[0] = info1;
+                pushmessage[1] = info2;
+                pushmessage[2] = info3;
+                pushmessage[3] = info4;
+
+
+                var headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + process.env.CHANNEL_ACCESS_TOKEN
+                }
+                var body = {
+                    replyToken: event.replyToken,
+                    messages: pushmessage
+                }
+
+                request({
+                    url: LINE_REPLY_URL,
+                    method: 'POST',
+                    headers: headers,
+                    body: body,
+                    json: true
+                });
+
+              });
+            }
+            
+
             
           }
         }
@@ -963,6 +1042,18 @@ function make_reply_message( ){
         });
       }
       
+      else if(( input.indexOf("bot数") != -1 ) || ( input.indexOf("返答数") != -1 )){
+        //bot数
+        bot_reply_words_output = "";
+        bot_words.get_bot_reply_words_number();
+        if( bot_reply_words_output != ""){
+          reply_message = "現在の対応返答数は約"+bot_reply_words_output + "個だよ";
+          console.log("reply_message = "+reply_message);
+          console.log("resolve");
+          return dfd.resolve();
+        }        
+        
+      }
       /* ここに追加
       else if(aaa){
         
@@ -979,7 +1070,6 @@ function make_reply_message( ){
           console.log("resolve");
           return dfd.resolve();
         }
-        
         
         //入試
         reply_message = judge_examination_words( input );
