@@ -324,7 +324,28 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
     
     
   }
-  else if( mode == 7 ){ //DB test
+  else if( mode == 7 ){ //DB test & announce用
+    
+
+    var to_array = new Array();
+
+    to_array[0] = process.env.USERID;
+    
+    info1 = new PushMessage();
+    info1.type = 'text';
+    info1.text = "<バージョンアップのお知らせ>\n\n話しかけると約20種類返答できるようになったよ。何個みつけれるかな～？";
+    
+    info2 = new PushMessage();
+    info2.type = 'sticker';
+    info2.packageId = "1";
+    info2.stickerId = "10";  //ガッツポーズのスタンプ
+    
+    init_pushmessage();
+    pushmessage[0] = info1;
+    pushmessage[1] = info2;
+    
+
+
     
     select_type = TYPE_USER;    //read_id_from_db()を呼ぶための設定
     //select_type = TYPE_GROUP;
@@ -333,11 +354,12 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
     .done(function(){
       if( select_type == TYPE_USER ){
         
-        //send_notification(id_list, "バージョンアップに向けての最終テストちう\n\n", TYPE_MULTICAST);
+  //      send_notification( to_array, pushmessage, TYPE_MULTICAST );
+  //      send_notification( id_list, pushmessage, TYPE_MULTICAST );
 
       }
       else if( select_type == TYPE_GROUP ){
-        //send_notification(id_list, "自習室来ない？\n\n", TYPE_PUSH);
+
       }
       
       console.log("ID_LIST="+ id_list);
@@ -614,97 +636,7 @@ app.post('/webhook', function(req, res, next){
 
 module.exports.send_notification_hourly = function(req, res){
 
-  
   send_notification_hourly_internal();
-
-/*  
-  input_message = STRING_IKOMA_ALL_STUDYROOM;
-  
-  if(!DEBUG){
-    if( check_available_time() == 0 ){
-      process.exit(); // heroku schedulerから呼ばれた際、プロセスを終了させるため
-      return;   //自習室時間外には通知しない
-    }
-  }
-  
-  select_type = TYPE_USER;  //read_id_from_db()への入力
-  
-  read_id_from_db( )
-  .done(function(){
-    console.log("ID_LIST="+ id_list);
-    if( id_list.length == 0){
-      return;
-    }
-    
-      make_reply_message()
-      .done(function(){
-        
-        if( reply_message != ""){
-          console.log("reply_message1 = " + reply_message);
-          
-          info1 = new PushMessage();
-          info1.type = 'text';
-          info1.text = reply_message;
-
-          if( check_early_morning() == 0 ){   //朝一では無いので自習室情報のみ配信
-            init_pushmessage();
-            pushmessage[0] = info1;
-            
-            send_notification( id_list, pushmessage, TYPE_MULTICAST );
-            console.log("\n----- send_notification_hourly done! ------\n");
-            return;
-          }
-          
-          var reply_message2;
-          
-          //天気は朝一番のみ
-          get_weatherServerConnection.get_today_weather()
-          .done(function(){
-
-            reply_message2 = "おはよう" 
-              + String.fromCodePoint(choose_emoji(TYPE_LINE_EMOJI_SMILE)) + "\n"
-              + set_weather_sentence( today_weather, today_temperature_high, today_rain_precipitation );
-            
-            console.log("reply_message2 = "+reply_message2);
-            
-            info2 = new PushMessage();
-            info2.type = 'text';
-            info2.text = reply_message2;
-            
-            //LINEスタンプ
-            info3 = choose_line_stamp( TYPE_LINE_STAMP_MOTIVATION );
-            
-            init_pushmessage();
-            pushmessage[0] = info2;
-            pushmessage[1] = info1;
-            
-            
-            //受験までの日がキリの良い日の場合はお知らせ
-            var exam_info_string = judge_examination_remainday();
-            if( exam_info_string != "" ){
-              
-              info4 = new PushMessage();
-              info4.type = 'text';
-              info4.text = exam_info_string;              
-              pushmessage[2] = info4;
-              pushmessage[3] = info3;
-
-            }
-            else{
-              pushmessage[2] = info3;
-            }
-            
-            send_notification( id_list, pushmessage, TYPE_MULTICAST );
-            
-        });      
-
-        }
-        console.log("\n----- send_notification_hourly done! ------\n");
-  });
-    
-    
-  });
-*/  
 
 };    //module.exports おわり
 
@@ -1241,13 +1173,24 @@ function judge_examination_words( input ){
 function judge_examination_remainday(){
   
   var EXAMINFO_NOTIFY_INTERVAL = 10;    //残10日毎に通知
+  var EXAMINFO_NOTIFY_INTERVAL_LONG = 50;    //残50日毎に通知
+  var interval = EXAMINFO_NOTIFY_INTERVAL;
+  
   var return_sentence="";
   var i;
   
   bot_words.get_examination_day();
   
   for(i=0; i< examinfo.length ; i++){
-    if( (examinfo[i].exam_remain_day) % EXAMINFO_NOTIFY_INTERVAL == 0 ){
+    
+    if( examinfo[i].exam_remain_day > 100 ){    //試験まで100日以上ならEXAMINFO_NOTIFY_INTERVAL_LONG毎に通知
+      interval = EXAMINFO_NOTIFY_INTERVAL_LONG;
+    }
+    else{
+      interval = EXAMINFO_NOTIFY_INTERVAL;
+    }
+    
+    if( (examinfo[i].exam_remain_day) % interval == 0 ){
       return_sentence += examinfo[i].exam_name + "入試本番まであと" +examinfo[i].exam_remain_day + "日！";
     }
   }
