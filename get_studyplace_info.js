@@ -37,53 +37,16 @@ var URL_IKOMA_TAKEMARU = "select * from rss where url=\'https://blogs.yahoo.co.j
 var URL_IKOMA_MIRAKU = "select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_miraku/rss.xml\' and title matches \'.*自習室.*\' limit 2";
 
 
-
-  //var query = "select title,link,date from rss where url in ('https://blogs.yahoo.co.jp/ikoma_shikanodai/rss.xml') limit 5; ";
-  //var query="select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_habataki/rss.xml' limit 5";  //図書館情報多い。はばたき
-  //var query="select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_toshokan/rss.xml' limit 5";  //本館。まんべんなく
-  //var query="select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_toshokan/rss.xml'";  //本館。全部で１０情報取得できるらしい
   
   //本命
   //var query="select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_toshokan/rss.xml\' and title matches \'.*自習室.*\' limit 3";
 
-  /*
-  var query = 'select * from yql.query.multi where queries in ('
-		+ '\"select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_takemaru/rss.xml\' and title matches \'.*自習室.*\' limit 1\",'
-		+ '\"select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_shikanodai/rss.xml\' and title matches \'.*自習室.*\' limit 1\",'
-		+ '\"select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_toshokan/rss.xml\' and title matches \'.*自習室.*\' limit 1\",'
-		+ '\"select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_seseragi/rss.xml\' and title matches \'.*自習室.*\' limit 1\",'
-		+ '\"select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_habataki/rss.xml\' and title matches \'.*自習室.*\' limit 1\",'
-		+ '\"select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_miraku/rss.xml\' and title matches \'.*自習室.*\' limit 1\"'
-		+ ')|sort(field=\'pubDate\',descending=\'true\');';
-  */
-  
-  /*
-    var query = 'select * from yql.query.multi where queries in ('
-		+ '\"select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_toshokan/rss.xml\' and title matches \'.*自習室.*\' limit 1\",'
-		+ '\"select * from rss where url=\'https://blogs.yahoo.co.jp/ikoma_habataki/rss.xml\' and title matches \'.*自習室.*\' limit 1\"'
-		+ ');';
-  */
+
   
 var array_place_name = ["生駒市図書館(本館)", "図書館北分館(はばたき)", "図書館南分館(せせらぎ)", "たけまるホール", "鹿ノ台ふれあいホール図書館", "美楽来"];
 
 
 
-
-
-/* ------------- test(ここから) ------------- 
-var http = require('http');
-var server = http.createServer(
-    function (request, response) {
-        response.writeHead(200, {'Content-Type': 'text/plain'});
-        
-      var studyroominfos = new Array();
-      get_studyroom_info(studyroominfos);
-      response.write('Hello World!!');
-        response.end();
-      console.log("done");
-    }
-).listen(3000);
-------------- test(ここまで) ------------- */
 
 module.exports.test = function(){
   var dfd = new $.Deferred;

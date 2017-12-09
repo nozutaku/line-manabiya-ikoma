@@ -27,6 +27,7 @@ var exam_table = [
 
 var THIS_APP_DESCRIPTION = "生駒の受験生を応援するアプリだよ。"
                           + String.fromCodePoint(EMOJI_SMILE1)+ "\n"
+                          + "https://www.code4ikoma.org/?p=346\n\n"
                           + "生駒の自習室情報を毎日配信するよ（図書館空いてる日のみ。図書館職員さんの書くブログを配信）。"
                           + "\nまた、お友だちと一緒に自習室で学べるようにお友だちが図書館に来たことを通知する機能もあり。"
                           + "\nその他、隠しコマンドもあるので探してみてね。"
@@ -40,14 +41,16 @@ var bot_reply_table = [
   ["help",          THIS_APP_DESCRIPTION],
   ["このアプリのURL",   "https://line.me/R/ti/p/-jDawLFDAz"],
   ["このアプリ",     THIS_APP_DESCRIPTION],
-  ["開発",           "CODE for IKOMA\nhttps://www.code4ikoma.org"],
+  ["開発",           "CODE for IKOMA\nhttps://www.code4ikoma.org/?p=346"],
+  ["作ったのは誰やねん",   "ななみのパパ"],
+  ["作った人",        "CODE for IKOMA\nhttps://www.code4ikoma.org/?p=346"],
   ["オープンソース",  "CODE for IKOMAのgithubへ公開予定。coming soon!"],
   ["利用規約",       "個人情報としては登録した人のUserIDを取得します。その他喋りかけた内容も参照します。"],
   ["ライセンス",      "@2018 CODE for IKOMA. CC-BY3.0"],
   ["謝辞",           "生駒市図書館ブログ記載のみなさま、生駒市情報政策課の木×３さん、LINEの立花さん。\n\nThanks!"],
   ["自習室の場所",    "http://lib.city.ikoma.lg.jp/toshow/info.html"],
   ["市長",           "こむちゃん"],
-  ["作った人",        "ななみのパパ"]
+  ["バージョン",      "Ver0.17.12101"]   //17年12/10ビルドの１回目という意味。★★★★リリース時には都度更新すること！★★★★
   
 ];
 

@@ -441,7 +441,8 @@ app.post('/webhook', function(req, res, next){
             });
             
             if( event.source.type == "user" ){
-              record_log_data( event.message.text, event.source.userId );
+              //record_log_data( event.message.text, event.source.userId );
+              record_log_data( event.message.text, "000" );
             }
             
           });
@@ -903,42 +904,7 @@ function make_reply_message( ){
           + studyroominfomations[i].link;
         
       }
-      /* --------------------------------------------
-      if( studyroominfomations.length > 0 ){
-          console.log("studyroominfos[0].title="+studyroominfomations[0].title);
-        
-        //同じデータを何回も配信しないように直近１時間のデータのみをbroadcastする
-        if( push_notification_mode == PUSH_BROADCAST_MODE){
-          
-          var now_date = new Date();
-  //        var now_date = new Date("Wed, 15 Nov 2017 9:00:00 +0900");
-          
 
-          console.log("publish_hour(UTC)="+studyroominfomations[0].date.getUTCHours());
-          console.log("now_hour(UTC)= "+now_date.getUTCHours() );
-          
-    //      var TIME_ONE_HOUR = 60 * 60 * 1000;    //1H   
-          var TIME_ONE_HOUR = 12* 60 * 60 * 1000;    //24H for DEBUG 
-          if( now_date.getTime() - studyroominfomations[0].date.getTime() > TIME_ONE_HOUR ){
-
-            console.log("既に配信されているのでbroadcastしない");
-            console.log("resolve");
-            return dfd.resolve();
-          }
-          else{
-            console.log("1H以内。配信開始");
-          }
-
-        }
-    
-          
-        output = studyroominfomations[0].title + " " 
-//          + display_date + " " 
-          + studyroominfomations[0].content + " "
-          + studyroominfomations[0].link;
-        
-      }
-      ---------------------------------------- */
       
       if( output == ""){
         if( push_notification_mode != PUSH_BROADCAST_MODE){
@@ -1498,32 +1464,7 @@ function read_id_from_db( ){
         return dfd.resolve();
         
     };
-//===================================
-/*  
-    table_insert_command = TABLE_INSERT_COMMAND_1 + table + TABLE_INSERT_COMMAND_2;
-    
-    query = client.query( table_insert_command, [ id, "", "" ]);
-  
-    query.on( 'end', function( row, err ){
 
-            
-            //再帰的に呼ぶ。100ms待って呼ぶ(空けないとエラーになる)
-            //setTimeout( function(){
-            //        insert_next_booklist_table( client, table, mode, count+1 )
-            //    }, 500 );
-                
-
-            console.log("=========================================");
-            console.log("set id to DB FINISH!!");
-            console.log("=========================================");
-	    //process.exit(); // heroku schedulerから呼ばれた際、プロセスを終了させるため
-        
-    });
-    query.on( 'error', function(error){
-        console.log("[insert_id2db] ERROR!!! cannot insert data to database.");
-        console.log(error);
-    });
-  */  
   
   console.log("promise");
   return dfd.promise();
