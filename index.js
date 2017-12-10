@@ -676,6 +676,7 @@ function send_notification_hourly_internal(){
             
             send_notification( id_list, pushmessage, TYPE_MULTICAST );
             console.log("\n----- send_notification_hourly done! ------\n");
+            process.exit(); // heroku schedulerから呼ばれた際、プロセスを終了させるため
             return;
           }
           
@@ -719,11 +720,17 @@ function send_notification_hourly_internal(){
             }
             
             send_notification( id_list, pushmessage, TYPE_MULTICAST );
+            console.log("\n----- send_notification_hourly done! ------\n");
+            process.exit(); // heroku schedulerから呼ばれた際、プロセスを終了させるため
             
         });      
 
         }
-        console.log("\n----- send_notification_hourly done! ------\n");
+        else{
+          console.log("\n----- send_notification_hourly done! ------\n");
+          process.exit(); // heroku schedulerから呼ばれた際、プロセスを終了させるため
+        }
+
     });
   });
 }
