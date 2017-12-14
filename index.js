@@ -333,7 +333,8 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
     
     info1 = new PushMessage();
     info1.type = 'text';
-    info1.text = "<バージョンアップのお知らせ>\n\n話しかけると約20種類返答できるようになったよ。何個みつけれるかな～？";
+//    info1.text = "<バージョンアップのお知らせ>\n\n話しかけると約20種類返答できるようになったよ。何個みつけれるかな～？";
+    info1.text = "昨日からトラブル発生中。PUSH通知失敗してます。ご迷惑をおかけします。";
     
     info2 = new PushMessage();
     info2.type = 'sticker';
@@ -354,8 +355,8 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
     .done(function(){
       if( select_type == TYPE_USER ){
         
-  //      send_notification( to_array, pushmessage, TYPE_MULTICAST );
-  //      send_notification( id_list, pushmessage, TYPE_MULTICAST );
+  //      send_notification( to_array, pushmessage, TYPE_MULTICAST );   //上記で指定
+  //      send_notification( id_list, pushmessage, TYPE_MULTICAST );    //DBから取得
 
       }
       else if( select_type == TYPE_GROUP ){
@@ -367,7 +368,7 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   }
   
   else if ( mode == 9 ){
-    
+    send_notification_hourly_internal();
       
   }
   else{
@@ -676,7 +677,7 @@ function send_notification_hourly_internal(){
             
             send_notification( id_list, pushmessage, TYPE_MULTICAST );
             console.log("\n----- send_notification_hourly done! ------\n");
-            process.exit(); // heroku schedulerから呼ばれた際、プロセスを終了させるため
+            process_kill_delay(); // heroku schedulerから呼ばれた際、プロセスを終了させる
             return;
           }
           
@@ -718,17 +719,17 @@ function send_notification_hourly_internal(){
             else{
               pushmessage[2] = info3;
             }
-            
+
             send_notification( id_list, pushmessage, TYPE_MULTICAST );
             console.log("\n----- send_notification_hourly done! ------\n");
-            process.exit(); // heroku schedulerから呼ばれた際、プロセスを終了させるため
+            process_kill_delay(); // heroku schedulerから呼ばれた際、プロセスを終了させる
             
         });      
 
         }
         else{
           console.log("\n----- send_notification_hourly done! ------\n");
-          process.exit(); // heroku schedulerから呼ばれた際、プロセスを終了させるため
+          process_kill_delay(); // heroku schedulerから呼ばれた際、プロセスを終了させる
         }
 
     });
@@ -758,9 +759,8 @@ function send_notification( destination, push_message, push_or_multicast ){
         'Authorization': 'Bearer ' + process.env.CHANNEL_ACCESS_TOKEN
     }
     var body = {
-//        replyToken: event.replyToken,
           to: destination,
-//        to: process.env.USERID, 
+//        to: process.env.USERID,   //★★★★[DEBUG]全員にbroadcastせずに自分だけにbroadcastすること
         messages: push_message      
     }
 
@@ -829,6 +829,12 @@ function send_notification_delay( destination, message, type, count ){
     }, 2000 );    
 }
 
+function process_kill_delay(){
+    console.log("process kill after 90s.");
+    setTimeout( function(){
+      process.exit(); // heroku schedulerから呼ばれた際、プロセスを終了させるため
+    }, 90000 );    
+}
 
 
 /* ユーザー入力文字から返答文面を作成 */
@@ -878,7 +884,7 @@ function make_reply_message( ){
         if( push_notification_mode == PUSH_BROADCAST_MODE){
           
           var now_date = new Date();
-  //        var now_date = new Date("Tue, 28 Nov 2017 15:23:00 +0900");
+  //        var now_date = new Date("Tue, 12 Dec 2017 09:02:00 +0900");
           
 
           console.log("publish_hour(UTC)="+studyroominfomations[i].date.getUTCHours());
@@ -1531,6 +1537,7 @@ function set_weather_sentence( today_weather, today_temperature_high, today_rain
 
 function check_available_time(){
   
+//  var now_date = new Date("Tue, 12 Dec 2017 09:02:00 +0900");
   var now_date = new Date();
   var now_hour = now_date.getUTCHours();   //getHours()だとherokuはUTCだがwindowsPCではlocaltime(JST)なのでUTCで取得で統一
   
@@ -1545,7 +1552,9 @@ function check_available_time(){
 }
 
 function check_early_morning(){
+//  var now_date = new Date("Tue, 12 Dec 2017 09:02:00 +0900");
   var now_date = new Date();
+  
   var now_hour = now_date.getUTCHours();   //getHours()だとherokuはUTCだがwindowsPCではlocaltime(JST)なのでUTCで取得で統一
   
   if(( now_hour >= 0) && ( now_hour < 1)){    //JST 9時～10時

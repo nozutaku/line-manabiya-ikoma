@@ -70,6 +70,7 @@ module.exports.get_examination_day = function(){
   var DAY = 24 * 60 * 60 * 1000;
 
   var dateObjNow = new Date();
+//  var dateObjNow = new Date("Tue, 12 Dec 2017 09:02:00 +0900");
 
   var date_obj;
   var remain_day;
