@@ -9,6 +9,7 @@ var DEBUG = 0;          //1=DEBUG 0=RELEASE   (特定時間以外broadcastしな
 var LOCAL_DEBUG = 0;    //1=Local node.js利用   0=herokuサーバー利用(default)  
 var DEBUG_ISTODAY_24H = 0;  //1=デバッグ用24時間データ全登録　0=リリース用
 
+
 var express = require('express');
 var bodyParser = require('body-parser');
 var request = require('request');
@@ -1123,7 +1124,7 @@ function judge_examination_words( input ){
   
   bot_words.get_examination_day();
   
-  if(( input == "入試" ) || ( input == "テスト" )){
+  if(( input == "入試" ) || ( input == "テスト" ) || ( input == "試験" ) || ( input == "受験" )){
     if( input == "テスト" ){
       output = "入試試験のことかな？";
     }
