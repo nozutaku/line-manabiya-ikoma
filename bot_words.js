@@ -54,7 +54,7 @@ var bot_reply_table = [
   ["市長",           "こむちゃん"],
   ["何時から",         "日によって違うよ。早い時は9:30からやってるかな。今日はどうかなぁ～？どこの自習室？"],
   ["行こうかな",       "来て来て。待ってるよ。どこの自習室に来てくれる？"],  
-  ["バージョン",      "Ver0.17.12181"]   //17年12/10ビルドの2回目という意味。★★★★リリース時には都度更新すること！★★★★
+  ["バージョン",      "Ver0.17.12231"]   //17年12/10ビルドの2回目という意味。★★★★リリース時には都度更新すること！★★★★
   
 ];
 
@@ -140,7 +140,7 @@ module.exports.get_bot_reply_words_number = function(){
   
   bot_reply_table.length;
   
-  var num = bot_reply_table.length + exam_table.length + 3; //+3は「天気」と「テスト」と「bot数」
+  var num = bot_reply_table.length + exam_table.length + 20; //+3は「天気」と「テスト」と「bot数」
   var about_num = Math.round( num / 10 ) * 10;
 
   bot_reply_words_output = String(about_num);

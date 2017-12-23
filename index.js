@@ -19,6 +19,7 @@ var pg = require('pg');
 
 var StydyPlaceServerConnection = require('./get_studyplace_info.js');
 var get_weatherServerConnection = require('./get_weather.js');
+var get_fortunetellingConnection = require('./get_fortunetelling.js');
 var static_data = require('./static_data.js');
 var bot_words = require('./bot_words.js');
 
@@ -84,6 +85,22 @@ global.today_weather;
 global.today_temperature_high;
 global.today_temperature_low;
 global.today_rain_precipitation;
+
+
+
+global.fortunetelling_sign;
+global.fortunetelling_sentence;
+
+global.TODAY_NO1_FOR_BROADCAST = "今日イチ";
+
+
+
+
+
+
+
+
+
 
 
 var LINE_REPLY_URL = "https://api.line.me/v2/bot/message/reply";
@@ -298,6 +315,18 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   
   //天気予報＋自習室情報
   else if (mode == 3){
+    
+    //fortunetelling_sign = TODAY_NO1_FOR_BROADCAST;
+    fortunetelling_sign = "蟹座";
+    fortunetelling_sentence = "";
+
+
+    
+    get_fortunetellingConnection.get_today_fortunetelling()
+    .done(function(){
+      console.log("fortunetelling done");
+      console.log(fortunetelling_sentence);
+    });
 
   }
   
@@ -952,6 +981,19 @@ function make_reply_message( ){
           console.log("resolve");
           return dfd.resolve();
         });
+      }
+      
+      //占い
+      else if( is_fortunetelling(input) ){
+        get_fortunetellingConnection.get_today_fortunetelling()
+        .done(function(){
+          if( fortunetelling_sentence != "" ){
+            reply_message = fortunetelling_sentence;
+            console.log("fortunetelling done");
+            console.log(fortunetelling_sentence);
+            return dfd.resolve();
+          }
+        });              
       }
       
       else if(( input.indexOf("bot数") != -1 ) || ( input.indexOf("返答数") != -1 )){
@@ -1669,6 +1711,65 @@ function get_weather_emoji( weather_string ){
   
 }
 
+function is_fortunetelling( input ){
+  var ret=0;
+  
+  if((input.indexOf("牡羊座") != -1) || (input.indexOf("おひつじ") != -1) || (input.indexOf("お羊") != -1) || (input.indexOf("お未") != -1)){
+    fortunetelling_sign = "牡羊座";
+    ret = 1;
+  }
+  else if((input.indexOf("牡牛座") != -1) || (input.indexOf("おうし") != -1) || (input.indexOf("お牛") != -1)){
+    fortunetelling_sign = "牡牛座";
+    ret = 1;
+  }
+  else if((input.indexOf("双子座") != -1) || (input.indexOf("ふたご") != -1)){
+    fortunetelling_sign = "双子座";
+    ret = 1;
+  }
+  else if((input.indexOf("蟹座") != -1) || (input.indexOf("かに座") != -1)){
+    fortunetelling_sign = "蟹座";
+    ret = 1;
+  }
+  else if((input.indexOf("獅子座") != -1) || (input.indexOf("しし座") != -1)){
+    fortunetelling_sign = "獅子座";
+    ret = 1;
+  }
+  else if((input.indexOf("乙女座") != -1) || (input.indexOf("おとめ座") != -1)){
+    fortunetelling_sign = "乙女座";
+    ret = 1;
+  }
+  else if((input.indexOf("天秤座") != -1) || (input.indexOf("てんびん座") != -1)){
+    fortunetelling_sign = "天秤座";
+    ret = 1;
+  }
+  else if((input.indexOf("蠍座") != -1) || (input.indexOf("さそり座") != -1)){
+    fortunetelling_sign = "蠍座";
+    ret = 1;
+  }
+  else if((input.indexOf("射手座") != -1) || (input.indexOf("いて座") != -1)){
+    fortunetelling_sign = "射手座";
+    ret = 1;
+  }
+  else if((input.indexOf("山羊座") != -1) || (input.indexOf("やぎ座") != -1)){
+    fortunetelling_sign = "山羊座";
+    ret = 1;
+  }
+  else if((input.indexOf("水瓶座") != -1) || (input.indexOf("みずがめ座") != -1) || (input.indexOf("水がめ座") != -1)){
+    fortunetelling_sign = "水瓶座";
+    ret = 1;
+  }
+  else if((input.indexOf("魚座") != -1) || (input.indexOf("うお座") != -1)){
+    fortunetelling_sign = "魚座";
+    ret = 1;
+  }
+  else if(input.indexOf("今日イチ") != -1){
+    fortunetelling_sign = "今日イチ";
+    ret = 1;    
+  }
+  
+  return( ret );
+
+}
 
 /* ------------------------------------------------------------
    ユーザー入力ワードを記録。サービス向上のため(有用なワードは返答返すように仕様追加予定)

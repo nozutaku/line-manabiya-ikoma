@@ -36,6 +36,8 @@ $ heroku config:set PASSWORD=xxxx
 $ heroku config:set KINTONE_URL=xxxx
 $ heroku config:set CYBOZU_API_TOKEN=xxxx
 
+$ heroku config:set FORTUNE_TELLING_DOMAIN=xxxx
+
 ```
 ```
 heroku postgres DB構造
