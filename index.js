@@ -252,6 +252,8 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
     
     
 //    send_notification( to_array, pushmessage, TYPE_MULTICAST );
+//    send_notification( to_array, pushmessage, TYPE_PUSH );  //送付先が一人の時はTYPE_PUSHでないとダメかも！？（途中で変わった？）
+    
     
     
     //send_notification_to_all_group();
@@ -398,7 +400,7 @@ app.get('/', function(req, res) {     // https://line-manabiya-ikoma.herokuapp.c
   }
   
   else if ( mode == 9 ){
-    send_notification_hourly_internal();
+    //send_notification_hourly_internal();
       
   }
   else{
@@ -672,6 +674,7 @@ module.exports.send_notification_hourly = function(req, res){
 
 };    //module.exports おわり
 
+
 function send_notification_hourly_internal(){
   input_message = STRING_IKOMA_ALL_STUDYROOM;
   
@@ -696,7 +699,7 @@ function send_notification_hourly_internal(){
         
         if( reply_message != ""){
           console.log("reply_message1 = " + reply_message);
-          
+         
           info1 = new PushMessage();
           info1.type = 'text';
           info1.text = reply_message;
@@ -707,69 +710,152 @@ function send_notification_hourly_internal(){
             
             send_notification( id_list, pushmessage, TYPE_MULTICAST );
             console.log("\n----- send_notification_hourly done! ------\n");
-            process_kill_delay(); // heroku schedulerから呼ばれた際、プロセスを終了させる
+            
+            if(!DEBUG){
+              process_kill_delay(); // heroku schedulerから呼ばれた際、プロセスを終了させる
+            }
             return;
           }
+        }
+        else{
+          //自習室情報無し
+        }
           
-          var reply_message2;
+        var reply_message2;
+        
+        /* コールバック地獄なのでダサいが、API呼んだ後にセットしないとダメなのでこのまま進行。誰かdefer/thenに変えてくれるだろう
+        　　②天気→③占い→④受験残日→⑤スタンプ
+        */
           
-          //天気は朝一番のみ
-          get_weatherServerConnection.get_today_weather()
+        ///////////////////////////////////////////////
+        //天気は(朝一番のみ)
+        ///////////////////////////////////////////////
+        get_weatherServerConnection.get_today_weather()
+        .done(function(){
+          reply_message2 = "おはよう" 
+            + String.fromCodePoint(choose_emoji(TYPE_LINE_EMOJI_SMILE)) + "\n"
+            + set_weather_sentence( today_weather, today_temperature_high, today_rain_precipitation );
+            
+          console.log("reply_message2 = "+reply_message2);
+            
+          info2 = new PushMessage();
+          info2.type = 'text';
+          info2.text = reply_message2;
+          
+          /////////////////////////////////////////////
+          // 占い(朝一番のみ)
+          /////////////////////////////////////////////
+          fortunetelling_sign = TODAY_NO1_FOR_BROADCAST;
+          fortunetelling_sentence = "";
+          
+          get_fortunetellingConnection.get_today_fortunetelling()
           .done(function(){
+            if( fortunetelling_sentence != ""){
+              info3 = new PushMessage();
+              info3.type = 'text';
+              info3.text = fortunetelling_sentence;      
+            }
 
-            reply_message2 = "おはよう" 
-              + String.fromCodePoint(choose_emoji(TYPE_LINE_EMOJI_SMILE)) + "\n"
-              + set_weather_sentence( today_weather, today_temperature_high, today_rain_precipitation );
+            console.log("fortunetelling done");
+            console.log(fortunetelling_sentence);
             
-            console.log("reply_message2 = "+reply_message2);
-            
-            info2 = new PushMessage();
-            info2.type = 'text';
-            info2.text = reply_message2;
-            
-            //LINEスタンプ
-            info3 = choose_line_stamp( TYPE_LINE_STAMP_MOTIVATION );
-            
-            init_pushmessage();
-            pushmessage[0] = info2;
-            pushmessage[1] = info1;
-            
-            
+            ////////////////////////////////////////////
             //受験までの日がキリの良い日の場合はお知らせ
+            ////////////////////////////////////////////
             var exam_info_string = judge_examination_remainday();
             if( exam_info_string != "" ){
               
               info4 = new PushMessage();
               info4.type = 'text';
-              info4.text = exam_info_string;              
-              pushmessage[2] = info4;
-              pushmessage[3] = info3;
+              info4.text = exam_info_string;
 
             }
             else{
-              pushmessage[2] = info3;
+            }
+              
+            ////////////////////////////////////////////
+            //LINEスタンプ
+            ////////////////////////////////////////////
+            info5 = choose_line_stamp( TYPE_LINE_STAMP_MOTIVATION );
+              
+              
+              
+            ////////////////////////////////////////////
+            // LINEメッセージへセット
+            ////////////////////////////////////////////
+            init_pushmessage();
+            if( typeof(info1) != "undefined"){
+              pushmessage[0] = info2; //天気
+              pushmessage[1] = info1; //自習室
+              
+              if( typeof(info3) != "undefined"){
+                pushmessage[2] = info3; //占い
+              }
+              else{
+                console.log("占いが無い場合は無いはず");
+              }
+              
+              if( typeof(info4) != "undefined"){
+                pushmessage[3] = info4; //受験残日
+                pushmessage[4] = info5; //スタンプ
+              }
+              else{
+                pushmessage[3] = info5; //スタンプ
+              }  
+            }
+            else{ //朝一時点で自習室無い場合
+              pushmessage[0] = info2; //天気
+              
+              if( typeof(info3) != "undefined"){
+                pushmessage[1] = info3; //占い
+              }
+              else{
+                console.log("占いが無い場合は無いはず");
+              }
+              
+              if( typeof(info4) != "undefined"){
+                pushmessage[2] = info4; //受験残日
+                pushmessage[3] = info5; //スタンプ
+              }
+              else{
+                pushmessage[2] = info5; //スタンプ
+              } 
+              
             }
 
             send_notification( id_list, pushmessage, TYPE_MULTICAST );
             console.log("\n----- send_notification_hourly done! ------\n");
-            process_kill_delay(); // heroku schedulerから呼ばれた際、プロセスを終了させる
+            if(!DEBUG){
+              process_kill_delay(); // heroku schedulerから呼ばれた際、プロセスを終了させる 
+            }
+            
+            
+            
+          });
+          
+
             
         });      
 
-        }
-        else{
-          console.log("\n----- send_notification_hourly done! ------\n");
-          process_kill_delay(); // heroku schedulerから呼ばれた際、プロセスを終了させる
-        }
+//        }
+//        else{
+//          console.log("\n----- send_notification_hourly done! ------\n");
+//          process_kill_delay(); // heroku schedulerから呼ばれた際、プロセスを終了させる
+//        }
 
     });
   });
 }
 
 
-
 function send_notification( destination, push_message, push_or_multicast ){
   
+  if(DEBUG){  //DEBUG時はオーナーにしか投げない
+    dest = new Array();
+    dest[0] = process.env.USERID;
+    destination = dest;
+  }
+      
   console.log("send_notification destination="+destination);
   
   var send_url;
@@ -783,13 +869,14 @@ function send_notification( destination, push_message, push_or_multicast ){
     console.log("error");
     return;
   }
+
   
     var headers = {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + process.env.CHANNEL_ACCESS_TOKEN
     }
     var body = {
-          to: destination,
+        to: destination,
 //        to: process.env.USERID,   //★★★★[DEBUG]全員にbroadcastせずに自分だけにbroadcastすること
         messages: push_message      
     }
@@ -1213,7 +1300,7 @@ function judge_examination_remainday(){
     }
     
     if( (examinfo[i].exam_remain_day) % interval == 0 ){
-      return_sentence += examinfo[i].exam_name + "入試本番まであと" +examinfo[i].exam_remain_day + "日！";
+      return_sentence += examinfo[i].exam_name + "入試本番まであと" +examinfo[i].exam_remain_day + "日！\n";
     }
   }
   
@@ -1595,8 +1682,13 @@ function check_available_time(){
 }
 
 function check_early_morning(){
-//  var now_date = new Date("Tue, 12 Dec 2017 09:02:00 +0900");
-  var now_date = new Date();
+  if(DEBUG){
+    var now_date = new Date("Tue, 12 Dec 2017 09:02:00 +0900");   //朝イチのみのイベント発生させる
+//    var now_date = new Date("Tue, 12 Dec 2017 10:02:00 +0900");
+    
+  }else{
+    var now_date = new Date();
+  }
   
   var now_hour = now_date.getUTCHours();   //getHours()だとherokuはUTCだがwindowsPCではlocaltime(JST)なのでUTCで取得で統一
   

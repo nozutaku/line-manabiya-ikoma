@@ -73,7 +73,7 @@ module.exports.get_examination_day = function(){
   var DAY = 24 * 60 * 60 * 1000;
 
   var dateObjNow = new Date();
-//  var dateObjNow = new Date("Tue, 12 Dec 2017 09:02:00 +0900");
+//  var dateObjNow = new Date("Tue, 22 Dec 2017 09:02:00 +0900");
 
   var date_obj;
   var remain_day;
@@ -84,7 +84,7 @@ module.exports.get_examination_day = function(){
   
   for( i=0; i< exam_table.length; i++ ){
     remain_day = Math.floor((( new Date( exam_table[i][1] )).getTime() - dateObjNow.getTime()) / DAY );
-    console.log("remain_day["+i+"]="+remain_day);
+//    console.log("remain_day["+i+"]="+remain_day);
     
     info = new ExamInfo();
     info.exam_name = exam_table[i][0];

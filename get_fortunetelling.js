@@ -92,7 +92,7 @@ module.exports.get_today_fortunetelling = function(){
             if( today_data[i].sign == fortunetelling_sign ){
               fortunetelling_sentence = 
                 "今日の" + today_data[i].sign + "は" + today_data[i].rank +"位" + String.fromCodePoint(choose_emoji(TYPE_LINE_EMOJI_SMILE))
-                +"\n「" + today_data[i].content + "」らしいよ。"
+                +"\n\n「" + today_data[i].content + "」らしいよ。"
                 +"\nラッキーカラーは" + today_data[i].color + "。"
                 +"\nラッキーアイテムは" + today_data[i].item + "。"
                 + "\n\npowerd by JugemKey. http://jugemkey.jp/api/waf/api_free.php"
