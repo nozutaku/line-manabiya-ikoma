@@ -717,8 +717,14 @@ function send_notification_hourly_internal(){
             return;
           }
         }
-        else{
-          //自習室情報無し
+        else{ //自習室情報無し
+          if( check_early_morning() == 0 ){
+            console.log("\n----- send_notification_hourly done! ------\n");
+            if(!DEBUG){
+              process_kill_delay(); // heroku schedulerから呼ばれた際、プロセスを終了させる
+            }
+            return;
+          }
         }
           
         var reply_message2;
@@ -836,12 +842,6 @@ function send_notification_hourly_internal(){
 
             
         });      
-
-//        }
-//        else{
-//          console.log("\n----- send_notification_hourly done! ------\n");
-//          process_kill_delay(); // heroku schedulerから呼ばれた際、プロセスを終了させる
-//        }
 
     });
   });
