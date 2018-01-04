@@ -139,12 +139,21 @@ function get_today_date(){
   var hour = nowDate.getHours();
   var minutes = nowDate.getMinutes();
 
-  date_string = year + "/" + month + "/" + day;
+  date_string = year + "/" + add_zero_number(month) + "/" + day;
   
   console.log("daytime=" + date_string + " " + hour + ":" + minutes);
   
   return( date_string );
 
+}
+
+function add_zero_number( num ){
+  var ret;
+  
+  if( num < 10 ){
+    ret = '0' + num;
+  }
+  return( ret );
 }
 
 //utc time -> JAPAN time(+9Hour)   https://firegoby.jp/archives/1348

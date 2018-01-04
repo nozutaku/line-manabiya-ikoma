@@ -756,10 +756,15 @@ function send_notification_hourly_internal(){
           
           get_fortunetellingConnection.get_today_fortunetelling()
           .done(function(){
-            if( fortunetelling_sentence != ""){
               info3 = new PushMessage();
+            if( fortunetelling_sentence != ""){
+ 
+            }
+            else{
+              //★★★ここに来たら不具合★★★
               info3.type = 'text';
-              info3.text = fortunetelling_sentence;      
+              info3.text = "ファイト～いっぱ～つ！！";
+              console.log("★★★バグバグバグバグバグ forturnetelling fail バグバグバグ★★★")
             }
 
             console.log("fortunetelling done");
