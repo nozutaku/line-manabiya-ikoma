@@ -44,7 +44,7 @@ var bot_reply_table = [
   ["開発",           "CODE for IKOMA\nhttps://www.code4ikoma.org/?p=346"],
   ["作ったのは誰やねん",   "ななみのパパ"],
   ["作った人",        "CODE for IKOMA\nhttps://www.code4ikoma.org/?p=346"],
-  ["オープンソース",  "CODE for IKOMAのgithubへ公開予定。coming soon!"],
+  ["オープンソース",  "https://github.com/code4ikoma/manabiya-ikoma"],
   ["利用規約",       "個人情報としては登録した人のUserIDを取得します。その他喋りかけた内容も参照します。"],
   ["ライセンス",      "@2018 CODE for IKOMA. CC-BY3.0"],
   ["謝辞",           "生駒市図書館ブログ記載のみなさま、生駒市情報政策課の木×３さん、LINEの立花さん、YuMake佐藤さん。\n\nSpecial thanks!"],
@@ -55,7 +55,7 @@ var bot_reply_table = [
   ["何時から",         "日によって違うよ。早い時は9:30からやってるかな。予定表をチェックしてみてね。\nhttp://www.ikomashi-sg.jp/data/news"],
   ["予定",         "自習室の予定表はここにあるよ。チェックしてみてね。でも予定は未定だから違ったらごめんね\nhttp://www.ikomashi-sg.jp/data/news"],
   ["行こうかな",       "来て来て。待ってるよ。どこの自習室に来てくれる？"],  
-  ["バージョン",      "Ver0.17.12231"]   //17年12/10ビルドの2回目という意味。★★★★リリース時には都度更新すること！★★★★
+  ["バージョン",      "Ver0.18.01071"]   //2018年01/07ビルドの1回目という意味。★★★★リリース時には都度更新すること！★★★★
   
 ];
 
