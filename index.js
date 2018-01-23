@@ -1267,8 +1267,10 @@ function judge_examination_words( input ){
     
     for(i=0; i < examinfo.length ; i++){
       console.log("examinfo["+i+"]="+examinfo[i].exam_name+" "+examinfo[i].exam_remain_day);
-
-      output += examinfo[i].exam_name + "入試まであと" + examinfo[i].exam_remain_day + "日！\n";
+      
+      if( examinfo[i].exam_remain_day >= 0 ){
+        output += examinfo[i].exam_name + "入試まであと" + examinfo[i].exam_remain_day + "日！\n";
+      }
     }
     output += "\n頑張って行きましょう！";
   }
@@ -1277,7 +1279,12 @@ function judge_examination_words( input ){
       console.log("examinfo["+i+"]="+examinfo[i].exam_name+" "+examinfo[i].exam_remain_day);
 
       if( input.indexOf(examinfo[i].exam_name) != -1 ){
-        output = examinfo[i].exam_name + "入試本番まであと" + examinfo[i].exam_remain_day + "日！";
+        if( examinfo[i].exam_remain_day >= 0 ){
+          output = examinfo[i].exam_name + "入試本番まであと" + examinfo[i].exam_remain_day + "日！";
+        }
+        else{
+          output = examinfo[i].exam_name + "はもう終わったよ。お疲れ様！";
+        }
         return(output);
       }
     }
@@ -1306,7 +1313,9 @@ function judge_examination_remainday(){
     }
     
     if( (examinfo[i].exam_remain_day) % interval == 0 ){
-      return_sentence += examinfo[i].exam_name + "入試本番まであと" +examinfo[i].exam_remain_day + "日！\n";
+      if( examinfo[i].exam_remain_day >= 0 ){
+        return_sentence += examinfo[i].exam_name + "入試本番まであと" +examinfo[i].exam_remain_day + "日！\n";
+      }
     }
   }
   
